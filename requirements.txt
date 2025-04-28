@@ -3,7 +3,9 @@ pyjwt
 passlib[bcrypt]
 black
 isort
+pylint
 pytest
 pytest-cov
 python-dotenv
 pydantic-settings
+sqlmodel
