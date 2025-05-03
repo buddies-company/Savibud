@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from adapters.in_memory.user_repository import InMemoryUserRepository
 from drivers.dependencies import get_token_header
-from entities.user import User, TokenData
+from entities.user import TokenData, User
 
 router = APIRouter()
 

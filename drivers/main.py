@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 
-from drivers.routers import auth, users
 from drivers.dependencies import get_token_header
+from drivers.routers import auth, users
 
 app = FastAPI(title="Savibud API")
 
