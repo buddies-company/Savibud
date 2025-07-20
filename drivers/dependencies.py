@@ -1,3 +1,4 @@
+import importlib
 from typing import Annotated
 
 import jwt
@@ -27,3 +28,18 @@ def get_token_header(token: Annotated[str, Depends(oauth2_scheme)]) -> TokenData
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="token has been expired"
         ) from exc
+
+
+def get_adapter_repository(name: str, adapter: str = settings.adapter):
+    """Retrieve correct adapter class based on name
+
+    name possible values : user
+    """
+    table_mapping = {"user": {"module": "user_repository", "class": "UserRepository"}}
+    try:
+        module_name = table_mapping.get(name).get("module")
+        class_name = table_mapping.get(name).get("class")
+        module = importlib.import_module(f"adapters.{adapter}.{module_name}")
+        return getattr(module, class_name)
+    except Exception as exc:
+        raise NameError(f"Repository for '{name}' not found") from exc

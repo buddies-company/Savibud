@@ -5,10 +5,12 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from adapters.in_memory.user_repository import InMemoryUserRepository
+from adapters.ports.user_repository import UserRepository
 from drivers.config import settings
+from drivers.dependencies import get_adapter_repository
 from entities.user import Token, User
-from use_cases.auth import AuthUseCase
+from use_cases.auth import AuthUseCase, RegisterUseCase
+from use_cases.exceptions import AlreadyExistingUser
 
 router = APIRouter()
 
@@ -34,9 +36,8 @@ def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     """Connect user via form data and retrieve JWT"""
-    user: User = AuthUseCase(InMemoryUserRepository())(
-        form_data.username, form_data.password
-    )
+    user_repo: UserRepository = get_adapter_repository("user")
+    user: User = AuthUseCase(user_repo())(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,3 +49,13 @@ def login_for_access_token(
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     return Token(access_token=access_token, token_type="bearer")
+
+
+@router.post("/auth/register", status_code=201)
+def register(item: User):
+    """Register a new user"""
+    user_repo: UserRepository = get_adapter_repository("user")
+    try:
+        return RegisterUseCase(user_repo())(item)
+    except AlreadyExistingUser as e:
+        raise HTTPException(status_code=409, detail=str(e))

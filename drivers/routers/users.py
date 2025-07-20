@@ -2,14 +2,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from adapters.in_memory.user_repository import InMemoryUserRepository
-from drivers.dependencies import get_token_header
+from adapters.ports.user_repository import UserRepository
+from drivers.dependencies import get_adapter_repository, get_token_header
 from entities.user import TokenData, User
 
 router = APIRouter()
 
 
 @router.get("/users/me")
-def testing_code(token_data: Annotated[TokenData, Depends(get_token_header)]) -> User:
+def connected_user(token_data: Annotated[TokenData, Depends(get_token_header)]) -> User:
     """Retrieve connected user info"""
-    return InMemoryUserRepository().get(username=token_data.username)
+    user_repo: UserRepository = get_adapter_repository("user")()
+    return user_repo.read(username=token_data.username)[0]

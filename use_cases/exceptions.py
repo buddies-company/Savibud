@@ -16,3 +16,11 @@ class InvalidPasswordError(Exception):
 
     def __str__(self) -> str:
         return f"Invalid password for user: {self.username}"
+
+
+@dataclass
+class AlreadyExistingUser(Exception):
+    message: str
+
+    def __str__(self) -> str:
+        return self.message
