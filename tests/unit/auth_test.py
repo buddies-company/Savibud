@@ -69,7 +69,7 @@ def test_connection_success(auth_use_case: AuthUseCase):
 
 def test_register_existing_user(register_use_case: RegisterUseCase):
     existing_user = User(
-        "johndoe", "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+        "johndoe", "test_password_hash"  # This should be a hashed password
     )
     with patch(
         "adapters.in_memory.user_repository.UserRepository.data",
@@ -84,10 +84,8 @@ def test_register_new_user(
     auth_use_case: AuthUseCase, register_use_case: RegisterUseCase
 ):
     """try to register a new user"""
-    new_user = User(
-        "janedoe", "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
-    )
-    register_use_case(new_user)
+    new_user = User("janedoe", "secret")
+    new_user = register_use_case(new_user)
     connected = auth_use_case("janedoe", "secret")
     assert connected == new_user
 
@@ -96,7 +94,7 @@ def test_password_is_hashed_on_register(register_use_case: RegisterUseCase):
     """Ensure that the password is hashed when registering a new user"""
     plain_password = "mysecret"
     new_user = User("alice", plain_password)
-    registered_user = register_use_case(new_user)
+    registered_user:User = register_use_case(new_user)
     # The stored password should not be the same as the plain password
     assert registered_user.password != plain_password
     # The stored password should look like a bcrypt hash

@@ -17,9 +17,10 @@ class AuthUseCase:
     user_repository: UserRepository
 
     def __call__(self, username: str, password: str) -> None:
-        existing_user = self.user_repository.read(username=username)[0]
+        existing_user:list[User] = self.user_repository.read(username=username)
         if not existing_user:
             raise UserNotFoundError(username)
+        existing_user: User = existing_user[0]
         if not pwd_context.verify(password, existing_user.password):
             raise InvalidPasswordError(username)
         return existing_user
@@ -36,4 +37,5 @@ class RegisterUseCase:
         if existing_user:
             raise AlreadyExistingUser(f"User {user.username} already exists")
         user.password = pwd_context.hash(user.password)
-        return self.user_repository.create(user)
+        self.user_repository.create(user)
+        return user

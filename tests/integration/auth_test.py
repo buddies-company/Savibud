@@ -24,8 +24,11 @@ def test_old_token():
             "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwidXNlcl9pZCI6bnVsbCwiZXhwIjoxNzQ1NTkzNzMzfQ.hUPwt16Q0GSn5mEiniBmpfvFSu5yMuX-JJu99BD77eY"
         },
     )
-    assert response.status_code in [403,401]
-    assert response.json() in [{"detail": "token has been expired"},{"detail": "Invalid credentials"}]
+    assert response.status_code in [403, 401]
+    assert response.json() in [
+        {"detail": "token has been expired"},
+        {"detail": "Invalid credentials"},
+    ]
 
 
 def test_bad_token():
