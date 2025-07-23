@@ -1,4 +1,5 @@
 from abc import ABC
+
 from adapters.ports.crud import CRUD
 
 

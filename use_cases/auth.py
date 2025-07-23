@@ -17,7 +17,7 @@ class AuthUseCase:
     user_repository: UserRepository
 
     def __call__(self, username: str, password: str) -> None:
-        existing_user:list[User] = self.user_repository.read(username=username)
+        existing_user: list[User] = self.user_repository.read(username=username)
         if not existing_user:
             raise UserNotFoundError(username)
         existing_user: User = existing_user[0]

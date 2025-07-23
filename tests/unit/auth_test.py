@@ -85,8 +85,13 @@ def test_register_new_user(
 ):
     """try to register a new user"""
     new_user = User("janedoe", "secret")
-    new_user = register_use_case(new_user)
-    connected = auth_use_case("janedoe", "secret")
+    with patch(
+        "adapters.in_memory.user_repository.UserRepository.data",
+        new_callable=PropertyMock,
+        return_value=[],
+    ):
+        new_user = register_use_case(new_user)
+        connected = auth_use_case("janedoe", "secret")
     assert connected == new_user
 
 
@@ -94,7 +99,12 @@ def test_password_is_hashed_on_register(register_use_case: RegisterUseCase):
     """Ensure that the password is hashed when registering a new user"""
     plain_password = "mysecret"
     new_user = User("alice", plain_password)
-    registered_user:User = register_use_case(new_user)
+    with patch(
+        "adapters.in_memory.user_repository.UserRepository.data",
+        new_callable=PropertyMock,
+        return_value=[],
+    ):
+        registered_user: User = register_use_case(new_user)
     # The stored password should not be the same as the plain password
     assert registered_user.password != plain_password
     # The stored password should look like a bcrypt hash
