@@ -4,10 +4,13 @@ from drivers.main import app
 
 client = TestClient(app)
 
+USERS_ME_ENDPOINT = "/users/me"
+AUTH_REGISTER_ENDPOINT = "/auth/register"
+
 
 def test_user_me(jwt_token):
     """Retrive tesst user info with success"""
-    response = client.get("/users/me", headers={"Authorization": f"Bearer {jwt_token}"})
+    response = client.get(USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {jwt_token}"})
     assert response.status_code == 200
     assert response.json() == {
         "id": None,
@@ -19,7 +22,7 @@ def test_user_me(jwt_token):
 def test_old_token():
     """Use old provided JWT token"""
     response = client.get(
-        "/users/me",
+        USERS_ME_ENDPOINT,
         headers={
             "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwidXNlcl9pZCI6bnVsbCwiZXhwIjoxNzQ1NTkzNzMzfQ.hUPwt16Q0GSn5mEiniBmpfvFSu5yMuX-JJu99BD77eY"
         },
@@ -46,7 +49,7 @@ def test_bad_token():
 def test_register_and_login_and_get_me():
     # Register a new user
     register_payload = {"username": "janedoe", "password": "securepassword"}
-    response = client.post("/auth/register", json=register_payload)
+    response = client.post(AUTH_REGISTER_ENDPOINT, json=register_payload)
     assert response.status_code == 201
     assert response.json()["username"] == "janedoe"
 
@@ -57,7 +60,7 @@ def test_register_and_login_and_get_me():
     token = response.json()["access_token"]
 
     # Get user info with the token
-    response = client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
+    response = client.get(USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json()["username"] == "janedoe"
 
@@ -65,15 +68,15 @@ def test_register_and_login_and_get_me():
 def test_register_existing_user():
     # Try to register the same user twice
     payload = {"username": "janedoe", "password": "securepassword"}
-    response1 = client.post("/auth/register", json=payload)
-    response2 = client.post("/auth/register", json=payload)
+    response1 = client.post(AUTH_REGISTER_ENDPOINT, json=payload)
+    response2 = client.post(AUTH_REGISTER_ENDPOINT, json=payload)
     assert response2.status_code == 409 or response2.status_code == 400
 
 
 def test_password_is_hashed_after_registration():
     """Ensure that the password is hashed after user registration"""
     payload = {"username": "hashcheckuser", "password": "plainpassword"}
-    response = client.post("/auth/register", json=payload)
+    response = client.post(AUTH_REGISTER_ENDPOINT, json=payload)
     assert response.status_code == 201
     data = response.json()
     # The password in the response should not be the same as the plain password

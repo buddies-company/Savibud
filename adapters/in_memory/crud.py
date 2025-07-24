@@ -9,7 +9,7 @@ class CRUD(CRUDBase):
     def read(self, **filters):
         filtered = self.data
         for key, value in filters.items():
-            filtered = list(filter(lambda d: getattr(d, key, None) == value, filtered))
+            filtered = list(filter(lambda d, key=key, value=value: getattr(d, key, None) == value, filtered))
         return filtered
 
     def create(self, element):
