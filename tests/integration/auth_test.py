@@ -9,8 +9,10 @@ AUTH_REGISTER_ENDPOINT = "/auth/register"
 
 
 def test_user_me(jwt_token):
-    """Retrive tesst user info with success"""
-    response = client.get(USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {jwt_token}"})
+    """Retrieve test user info with success"""
+    response = client.get(
+        USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {jwt_token}"}
+    )
     assert response.status_code == 200
     assert response.json() == {
         "id": None,
@@ -60,7 +62,9 @@ def test_register_and_login_and_get_me():
     token = response.json()["access_token"]
 
     # Get user info with the token
-    response = client.get(USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {token}"})
+    response = client.get(
+        USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 200
     assert response.json()["username"] == "janedoe"
 
@@ -68,7 +72,7 @@ def test_register_and_login_and_get_me():
 def test_register_existing_user():
     # Try to register the same user twice
     payload = {"username": "janedoe", "password": "securepassword"}
-    response1 = client.post(AUTH_REGISTER_ENDPOINT, json=payload)
+    client.post(AUTH_REGISTER_ENDPOINT, json=payload)
     response2 = client.post(AUTH_REGISTER_ENDPOINT, json=payload)
     assert response2.status_code == 409 or response2.status_code == 400
 
@@ -83,3 +87,28 @@ def test_password_is_hashed_after_registration():
     assert data["password"] != payload["password"]
     # The password should look like a bcrypt hash
     assert data["password"].startswith("$2b$")
+
+
+def test_revoke_user():
+    """Revoke a user"""
+    # Register a new user
+    register_payload = {"username": "revoketestuser", "password": "testpassword"}
+    response = client.post(AUTH_REGISTER_ENDPOINT, json=register_payload)
+    assert response.status_code == 201
+
+    # Get the user info to revoke
+    response = client.post("/token", data=register_payload)
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+
+    # Revoke the user
+    response = client.delete(
+        USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+
+    # Try to get the revoked user info
+    response = client.get(
+        USERS_ME_ENDPOINT, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 404 or response.status_code == 401

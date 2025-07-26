@@ -9,7 +9,12 @@ class CRUD(CRUDBase):
     def read(self, **filters):
         filtered = self.data
         for key, value in filters.items():
-            filtered = list(filter(lambda d, key=key, value=value: getattr(d, key, None) == value, filtered))
+            filtered = list(
+                filter(
+                    lambda d, key=key, value=value: getattr(d, key, None) == value,
+                    filtered,
+                )
+            )
         return filtered
 
     def create(self, element):
@@ -21,6 +26,5 @@ class CRUD(CRUDBase):
         for key, value in modifications.items():
             setattr(item, key, value)
 
-    def delete(self, item_id):
-        item = self.read(id=item_id)
+    def delete(self, item):
         self.data.remove(item)

@@ -16,7 +16,7 @@ class AuthUseCase:
 
     user_repository: UserRepository
 
-    def __call__(self, username: str, password: str) -> None:
+    def __call__(self, username: str, password: str) -> User:
         existing_user: list[User] = self.user_repository.read(username=username)
         if not existing_user:
             raise UserNotFoundError(username)
@@ -32,10 +32,25 @@ class RegisterUseCase:
 
     user_repository: UserRepository
 
-    def __call__(self, user: User) -> None:
+    def __call__(self, user: User) -> User:
         existing_user = self.user_repository.read(username=user.username)
         if existing_user:
             raise AlreadyExistingUser(f"User {user.username} already exists")
         user.password = pwd_context.hash(user.password)
         self.user_repository.create(user)
+        return user
+
+
+@dataclass
+class RevokeUseCase:
+    """Revocation use case"""
+
+    user_repository: UserRepository
+
+    def __call__(self, user: User) -> User:
+        existing_user = self.user_repository.read(username=user.username)
+        if not existing_user:
+            raise UserNotFoundError(user.username)
+        self.user_repository.delete(existing_user[0])
+        user.id = None  # Clear the ID to indicate the user has been revoked
         return user

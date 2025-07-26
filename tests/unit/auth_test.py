@@ -5,12 +5,14 @@ import pytest
 from adapters.in_memory.user_repository import UserRepository
 from adapters.ports.user_repository import UserRepository as UserRepositoryBase
 from entities.user import User
-from use_cases.auth import AuthUseCase, RegisterUseCase
+from use_cases.auth import AuthUseCase, RegisterUseCase, RevokeUseCase
 from use_cases.exceptions import (
     AlreadyExistingUser,
     InvalidPasswordError,
     UserNotFoundError,
 )
+
+USER_REPOSITORY_DATA_PATH = "adapters.in_memory.user_repository.UserRepository.data"
 
 
 @pytest.fixture
@@ -31,6 +33,12 @@ def register_use_case(users_repository: UserRepositoryBase) -> RegisterUseCase:
     return RegisterUseCase(users_repository)
 
 
+@pytest.fixture
+def revoke_use_case(users_repository: UserRepositoryBase) -> RevokeUseCase:
+    """Initialisation of RevokeUseCase class"""
+    return RevokeUseCase(users_repository)
+
+
 def test_user_not_found(auth_use_case: AuthUseCase):
     """try to connect to non existing user"""
     with pytest.raises(UserNotFoundError):
@@ -40,7 +48,7 @@ def test_user_not_found(auth_use_case: AuthUseCase):
 def test_wrong_password(auth_use_case: AuthUseCase):
     """try to connect with wrong password"""
     with patch(
-        "adapters.in_memory.user_repository.UserRepository.data",
+        USER_REPOSITORY_DATA_PATH,
         new_callable=PropertyMock,
         return_value=[
             User(
@@ -59,7 +67,7 @@ def test_connection_success(auth_use_case: AuthUseCase):
         "johndoe", "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
     )
     with patch(
-        "adapters.in_memory.user_repository.UserRepository.data",
+        USER_REPOSITORY_DATA_PATH,
         new_callable=PropertyMock,
         return_value=[user],
     ):
@@ -72,7 +80,7 @@ def test_register_existing_user(register_use_case: RegisterUseCase):
         "johndoe", "test_password_hash"  # This should be a hashed password
     )
     with patch(
-        "adapters.in_memory.user_repository.UserRepository.data",
+        USER_REPOSITORY_DATA_PATH,
         new_callable=PropertyMock,
         return_value=[existing_user],
     ):
@@ -86,7 +94,7 @@ def test_register_new_user(
     """try to register a new user"""
     new_user = User("janedoe", "secret")
     with patch(
-        "adapters.in_memory.user_repository.UserRepository.data",
+        USER_REPOSITORY_DATA_PATH,
         new_callable=PropertyMock,
         return_value=[],
     ):
@@ -100,7 +108,7 @@ def test_password_is_hashed_on_register(register_use_case: RegisterUseCase):
     plain_password = "mysecret"
     new_user = User("alice", plain_password)
     with patch(
-        "adapters.in_memory.user_repository.UserRepository.data",
+        USER_REPOSITORY_DATA_PATH,
         new_callable=PropertyMock,
         return_value=[],
     ):
@@ -109,3 +117,46 @@ def test_password_is_hashed_on_register(register_use_case: RegisterUseCase):
     assert registered_user.password != plain_password
     # The stored password should look like a bcrypt hash
     assert registered_user.password.startswith("$2b$")
+
+
+def test_revoke_user_success(revoke_use_case: RevokeUseCase):
+    """Ensure that an existing user can be revoked (deleted) successfully"""
+    user_to_revoke = User(
+        "janedoe", "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+    )
+    with patch(
+        USER_REPOSITORY_DATA_PATH,
+        new_callable=PropertyMock,
+        return_value=[user_to_revoke],
+    ):
+        revoked = revoke_use_case(user_to_revoke)
+    assert revoked.id is None  # ID should be cleared to indicate revocation
+
+
+def test_revoke_user_not_found(revoke_use_case: RevokeUseCase):
+    """Ensure that revoking a non-existing user raises UserNotFoundError"""
+    with patch(
+        USER_REPOSITORY_DATA_PATH,
+        new_callable=PropertyMock,
+        return_value=[],
+    ):
+        with pytest.raises(UserNotFoundError):
+            revoke_use_case(
+                User("notfounduser", "test_password_hash")
+            )  # User is not found, should raise error
+
+
+def test_revoke_user_already_revoked(revoke_use_case: RevokeUseCase):
+    """Ensure that revoking an already revoked user raises UserNotFoundError"""
+    user_to_revoke = User(
+        "janedoe", "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+    )
+    with patch(
+        USER_REPOSITORY_DATA_PATH,
+        new_callable=PropertyMock,
+        return_value=[user_to_revoke],
+    ):
+        revoke_use_case(user_to_revoke)
+        # Attempt to revoke again should raise UserNotFoundError
+        with pytest.raises(UserNotFoundError):
+            revoke_use_case(user_to_revoke)  # User is not found, should raise error

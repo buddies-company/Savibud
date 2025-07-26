@@ -1,10 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from adapters.ports.user_repository import UserRepository
 from drivers.dependencies import get_adapter_repository, get_token_header
 from entities.user import TokenData, User
+from use_cases.auth import RevokeUseCase
+from use_cases.exceptions import UserNotFoundError
 
 router = APIRouter()
 
@@ -13,4 +15,19 @@ router = APIRouter()
 def connected_user(token_data: Annotated[TokenData, Depends(get_token_header)]) -> User:
     """Retrieve connected user info"""
     user_repo: UserRepository = get_adapter_repository("user")()
-    return user_repo.read(username=token_data.username)[0]
+    users = user_repo.read(username=token_data.username)
+    if not users:
+        raise HTTPException(status_code=404, detail="User not found")
+    return users[0]
+
+
+@router.delete("/users/me")
+def revoke_user(
+    user: User = Depends(connected_user),
+    user_repo: UserRepository = Depends(get_adapter_repository("user")),
+):
+    """Revoke a user"""
+    try:
+        return RevokeUseCase(user_repo)(user)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))

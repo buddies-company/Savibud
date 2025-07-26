@@ -17,5 +17,5 @@ class CRUD(ABC):
         """Modify element"""
 
     @abstractmethod
-    def delete(self, item_id):
+    def delete(self, item):
         """Delete element"""
