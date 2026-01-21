@@ -10,14 +10,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - name: Cache Python dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('savibud-api/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: Set up Python
@@ -25,16 +24,18 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
+        working-directory: ./savibud-api
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests and generate coverage
+        working-directory: ./savibud-api
         run: |
           pytest --cov=. --cov-report=xml --maxfail=1 --exitfirst
       - name: Cache coverage report
         uses: actions/cache@v3
         with:
-          path: coverage.xml
+          path: savibud-api/coverage.xml
           key: ${{ runner.os }}-coverage-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-coverage-
@@ -50,7 +51,7 @@ jobs:
       - name: Restore coverage report
         uses: actions/cache@v3
         with:
-          path: coverage.xml
+          path: savibud-api/coverage.xml
           key: ${{ runner.os }}-coverage-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-coverage-
@@ -61,4 +62,4 @@ jobs:
         with:
           args: >
             -Dsonar.python.version=3.11
-            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.python.coverage.reportPaths=savibud-api/coverage.xml

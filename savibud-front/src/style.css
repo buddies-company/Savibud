@@ -1,0 +1,97 @@
+@import 'tailwindcss';
+@source "../node_modules/@soilhat/react-components";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ================================================= */
+  /* Savibud Color Palette - Extracted from Mascot */
+  /* ================================================= */
+  --color-savibud-navy: #2e4a62;    /* Main Brand Trust */
+  --color-savibud-green: #82c341;   /* Growth & Success */
+  --color-savibud-orange: #e68a4f;  /* Squirrel Accent/Action */
+  --color-savibud-sky: #d9e9f0;    /* Soft UI Accents */
+  --color-savibud-cream: #fdf1d3;  /* Warm Neutral */
+  
+  --color-dark-navy: #1a2b3a;      /* Deep background for Dark Mode */
+  --color-off-white: #f8fafb;      /* Clean background for Light Mode */
+  --color-white: #ffffff;
+  --color-red: #d9534f;            /* Softer Financial Alert Red */
+
+  /* ================================================= */
+  /* Light Mode */
+  /* ================================================= */
+
+  /* Brand and Core */
+  --color-brand: var(--color-savibud-navy);
+  --color-primary: var(--color-savibud-navy);
+  --color-primary-hover: #243a4d; 
+  --color-secondary: var(--color-savibud-green);
+  --color-secondary-hover: #71ab38; 
+  --color-tertiary: var(--color-savibud-orange);
+  --color-light: var(--color-savibud-sky);
+  --color-light-hover: #c5dae5;
+
+  /* Surfaces and Text */
+  --color-surface-base: var(--color-off-white);
+  --color-surface-panel: var(--color-white);
+  --color-text-primary: var(--color-savibud-navy);
+  --color-text-secondary: #5a7388; /* Muted Navy-Grey */
+  --color-text-on-primary: var(--color-white);
+
+  /* States and Structure */
+  --color-state-success: var(--color-savibud-green);
+  --color-state-warning: #f1b44c; /* Warm Gold */
+  --color-state-danger: var(--color-red);
+  --color-text-on-danger: var(--color-white);
+  --color-state-info: #4a90e2;
+  --color-state-focus: var(--color-savibud-orange);
+  --color-border: #e2e8f0;
+  --color-light-border: #edf2f7;
+
+  /* ================================================= */
+  /* Dark Mode */
+  /* ================================================= */
+
+  /* Brand and Core */
+  --color-brand-dark: #4a6d8c;
+  --color-primary-dark: #6fa6d3;
+  --color-primary-hover-dark: #8cbbe1; 
+  --color-secondary-dark: #a3d977;
+  --color-secondary-hover-dark: #b8e294; 
+  --color-tertiary-dark: var(--color-savibud-orange);
+  --color-light-dark: #243444;
+  --color-light-hover-dark: #2e4154;
+
+  /* Surfaces and Text */
+  --color-surface-base-dark: var(--color-dark-navy);
+  --color-surface-panel-dark: #233545;
+  --color-text-primary-dark: var(--color-savibud-sky);
+  --color-text-secondary-dark: #94a3b8;
+  --color-text-on-primary-dark: var(--color-dark-navy);
+
+  /* States and Structure */
+  --color-state-success-dark: #a3d977;
+  --color-state-warning-dark: #ffd166;
+  --color-state-danger-dark: #ff8c82;
+  --color-text-on-danger-dark: var(--color-dark-navy);
+  --color-state-info-dark: #6fa6d3;
+  --color-state-focus-dark: var(--color-savibud-orange);
+  --color-border-dark: #334155;
+  --color-light-border-dark: #2d3748;
+}
+
+body {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-base);
+  transition: background-color 0.3s ease; /* Smooth toggle */
+}
+.dark body {
+  color: var(--color-text-primary-dark);
+  background-color: var(--color-surface-base-dark);
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
