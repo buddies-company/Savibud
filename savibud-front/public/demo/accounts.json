@@ -1,0 +1,25 @@
+{
+    "data": [
+        {
+            "id": "1",
+            "label": "Compte de Cheque",
+            "type": "",
+            "balance": 100,
+            "bank": {
+                "id": "1",
+                "name": "bnp"
+            }
+        },
+        {
+            "id": "2",
+            "label": "Compte de Cheque",
+            "type": "",
+            "balance": 1200,
+            "name": "Compte de Cheque",
+            "bank": {
+                "id": "2",
+                "name": "hello bank"
+            }
+        }
+    ]
+}

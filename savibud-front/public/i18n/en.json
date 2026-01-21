@@ -1,0 +1,55 @@
+{
+    "pages": {
+        "auth":{
+            "login": {
+                "title": "Login",
+                "description":"Savibud login page",
+                "greetings":"Welcome Back!",
+                "demo":"Demo",
+                "login":"Login",
+                "create_account":"Create an Account!",
+                "invalid":"please provide valid input",
+                "demo_toast":"Welcome to demo mode! 🎈 The displayed data is fictitious."
+            },
+            "register": {
+                "title": "Register",
+                "description":"User creation page",
+                "create_account":"Create an Account!",
+                "repeat_password":"Repeat Password",
+                "register":"Register Account",
+                "login":"Already have an account? Login!"
+            }
+        },
+        "accounts":{
+            "list": "Accounts list"
+        },
+        "home": {
+            "title": "Home",
+            "description":"Savibud home page"
+        },
+        "about": {
+            "title": "About",
+            "description":"Savibud about page"
+        },
+        "user":{
+            "logout": "Log Out",
+            "settings": "Settings",
+            "username":"Username",
+            "password":"Password"
+        },
+        "settings":{
+            "title": "Settings",
+            "save":"Save"
+        }
+    },
+    "lang": "en-GB",
+    "label": "Select another language!",
+    "user": "Hello, {{name}}",
+    "toast": {
+        "close": "Close"
+    },
+    "theme": {
+        "light": "Light",
+        "dark": "Dark"
+    }
+}
