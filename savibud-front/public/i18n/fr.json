@@ -1,0 +1,49 @@
+{
+    "title": "Multi-language app",
+    "label": "Choisis une autre langue!",
+    "about": "A propos",
+    "home": "Accueil",
+    "user": "Bonjour, {{name}}",
+    "lang": "fr-FR",
+    "pages": {
+        "auth": {
+            "login": {
+                "title": "Connexion",
+                "description": "page de connexion",
+                "greetings": "Bon retour!",
+                "demo": "Démo",
+                "login": "Connexion",
+                "create_account": "Créer un compte!",
+                "invalid": "Veuillez fournir une entrée valide",
+                "demo_toast": "Bienvenue en mode démo ! 🎈 Les données affichées sont fictives"
+            }
+        },
+        "settings": {
+            "title": "Paramètres",
+            "description": "page des paramètres",
+            "language": "Langue",
+            "theme": "Thème",
+            "dark_mode": "Mode sombre",
+            "light_mode": "Mode clair",
+            "save": "Enregistrer les modifications"
+        },
+        "user": {
+            "title": "Profil utilisateur",
+            "description": "page de profil utilisateur",
+            "greetings": "Bonjour, {{name}}",
+            "edit_profile": "Modifier le profil",
+            "logout": "Se déconnecter"
+        },
+        "home": {
+            "title": "Accueil",
+            "description": "page d'accueil",
+            "welcome": "Bienvenue sur Savibud!",
+            "explore": "Explorez nos fonctionnalités"
+        },
+        "about": {
+            "title": "À propos",
+            "description": "page à propos",
+            "content": "Savibud est une application de démonstration pour montrer les capacités de React, TypeScript et i18n."
+        }
+    }
+}

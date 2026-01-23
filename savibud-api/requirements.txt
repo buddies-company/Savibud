@@ -1,0 +1,16 @@
+fastapi[standard]
+pyjwt
+passlib[bcrypt]
+black
+isort
+pylint
+pytest
+pytest-cov
+python-dotenv
+pydantic-settings
+sqlmodel
+apscheduler
+requests
+psycopg2
+alembic
+python-dateutil

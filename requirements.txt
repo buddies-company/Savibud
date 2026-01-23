@@ -1,9 +1,0 @@
-fastapi[standard]
-pyjwt
-passlib[bcrypt]
-black
-isort
-pytest
-pytest-cov
-python-dotenv
-pydantic-settings

@@ -1,7 +1,7 @@
 [project]
 name = "savibud api"
 dependencies = [
-  "black",
+  "black:25.1.0",
 ]
 
 [tool.black]

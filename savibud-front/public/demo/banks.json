@@ -1,0 +1,12 @@
+{
+    "data": [
+        {
+            "id":1,
+            "name": "bnp"
+        },
+        {
+            "id":2,
+            "name": "hello bank"
+        }
+    ]
+}

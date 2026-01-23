@@ -1,0 +1,14 @@
+{
+    "data": {
+        "user": {
+            "username": "demo",
+            "currency": {
+                "current": "EUR",
+                "values": [
+                    "EUR"
+                ]
+            }
+        }
+    },
+    "token": "faketoken"
+}

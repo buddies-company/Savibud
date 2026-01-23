@@ -1,0 +1,25 @@
+name: Organization-Wide Deploy
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, nixos-server] 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        run: |          
+          echo "${{ secrets.FRONT_ENV_FILE }}" > savibud-front/.env
+          echo "${{ secrets.API_ENV_FILE }}" > savibud-api/.env
+
+          mkdir -p savibud-api/static/uploads
+
+          # Create .npmrc file for private GitHub packages
+          # We use printf to avoid trailing newline issues with tokens
+          printf "@soilhat:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n" "${{ secrets.GITHUB_TOKEN }}" > savibud-front/.npmrc
+
+          docker-compose up -d --build
+          docker image prune -f
