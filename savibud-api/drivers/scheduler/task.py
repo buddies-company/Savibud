@@ -2,7 +2,7 @@ import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from adapters.postgres.saving_repository import SavingsAutomationRepository
+from adapters.postgres.saving_repository import SavingsGoalRepository
 from drivers.database import SessionLocal
 from use_cases.process_monthly_savings import ProcessMonthlySavings
 
@@ -14,7 +14,7 @@ def _run_monthly_savings() -> None:
     # We use a context manager for cleaner code
     with SessionLocal() as db:
         try:
-            repo = SavingsAutomationRepository(db)
+            repo = SavingsGoalRepository(db)
             use_case = ProcessMonthlySavings(repo)
 
             use_case.execute()
@@ -37,8 +37,8 @@ def register_jobs(scheduler: AsyncIOScheduler) -> None:
         id="process_monthly_savings",
         replace_existing=True,
         # Allow the job to run even if it's up to 24 hours late
-        misfire_grace_time=86400, 
+        misfire_grace_time=86400,
         # coalesce=True prevents it from running 10 times if it missed 10 days
-        coalesce=True
+        coalesce=True,
     )
     logger.info("📅 Job registered: process_monthly_savings (Cron: 00:00)")

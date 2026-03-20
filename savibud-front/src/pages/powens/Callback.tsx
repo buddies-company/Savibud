@@ -20,6 +20,9 @@ export const Callback = () => {
                     console.error("Exchange failed:", err);
                 });
         }
+        else {
+            globalThis.location.href = "/";
+        }
     }, []);
     return (
         <div>

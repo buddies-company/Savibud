@@ -1,15 +1,30 @@
 [project]
-name = "savibud api"
+name = "savibud-api"
+version = "0.1.0"
+description = "API of the Savibud application"
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = [
-  "black:25.1.0",
+    "alembic>=1.18.4",
+    "apscheduler>=3.11.2",
+    "fastapi[standard]>=0.135.1",
+    "passlib[bcrypt]>=1.7.4",
+    "psycopg2-binary>=2.9.11",
+    "pydantic-settings>=2.13.1",
+    "pyjwt>=2.12.1",
+    "python-dateutil>=2.9.0.post0",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
+    "sqlmodel>=0.0.37",
 ]
 
-[tool.black]
-force-exclude = "env/"
-
-[tool.isort]
-profile = "black"
-skip_glob = ["env/*"]
+[dependency-groups]
+dev = [
+    "pylint>=4.0.5",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.15.6",
+]
 
 [tool.pylint]
 disable=["missing-module-docstring"]

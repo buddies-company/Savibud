@@ -10,7 +10,7 @@ class CRUD(Generic[T], ABC):
 
     @abstractmethod
     def read(self, **filters) -> List[T]:
-        """
+        r"""
         Fetches records from the database with support for filtering, pagination, and sorting.
 
         ### Examples:
@@ -44,3 +44,37 @@ class CRUD(Generic[T], ABC):
     @abstractmethod
     def delete(self, item: T) -> bool:
         """Delete element"""
+
+    @abstractmethod
+    def upsert(self, element: T, **filters) -> T:
+        r"""
+        Insert or update a record based on filter criteria (upsert operation).
+
+        If a record matching the filters exists, it will be updated with the values from `element`.
+        If no record matches the filters, a new record will be created.
+
+        ### Examples:
+        ```python
+        # Upsert a transaction by powens_transaction_id and account_id
+        transaction = Transaction(
+            powens_transaction_id="tx-123",
+            account_id="acc-uuid",
+            amount=100.00,
+            label="Payment"
+        )
+        repo.upsert(transaction, powens_transaction_id="tx-123", account_id="acc-uuid")
+
+        # Upsert a saving goal by user_id and name
+        goal = SavingsGoal(user_id="user-uuid", name="Vacation", target_amount=5000)
+        repo.upsert(goal, user_id="user-uuid", name="Vacation")
+        ```
+
+        ### Parameters:
+        * **element** (T): The entity instance with values to insert or update.
+        * **\*\*filters**: Keyword arguments matching model attributes to identify the existing record.
+                          If a record with these attribute values exists, it will be updated.
+                          Otherwise, a new record will be created with all values from `element`.
+
+        ### Returns:
+        * `T`: The created or updated entity instance.
+        """

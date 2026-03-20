@@ -1,12 +1,44 @@
 import { useToast } from "@soilhat/react-components";
 import { saveDataToCache, getCachedData } from "./idb";
 
+// Global flag to prevent multiple concurrent token refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
 export const getApiUrl = (url: string) => {
     const isDemo = localStorage.getItem("demo")
     const api = isDemo ? "/demo" : "/api";
     const postfix = isDemo ? ".json" : "";
     return `${api}${url}${postfix}`
 }
+
+const refreshAccessToken = async (): Promise<boolean> => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(getApiUrl("/token/refresh"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.access_token) {
+                localStorage.setItem("token", data.access_token);
+                return true;
+            }
+        }
+    } catch (err) {
+        console.debug('Failed to refresh token', err);
+    }
+    return false;
+};
 
 // API response wrapper
 export type ApiResponse<T = unknown> = { data: T; offline: boolean };
@@ -19,7 +51,8 @@ export const callApi = async <T = unknown>(
     url: string,
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     save_name?: string | undefined,
-    data?: BodyInit | null | undefined | object
+    data?: BodyInit | null | undefined | object,
+    params?: Record<string, string | number | boolean | null | undefined>
 ): Promise<ApiResponse<T>> => {
     const offline = !navigator.onLine
     if (offline && save_name) {
@@ -45,21 +78,55 @@ export const callApi = async <T = unknown>(
         }
     }
 
-    const apiUrl = getApiUrl(url);
+    // Build URL with query parameters
+    let finalUrl = getApiUrl(url);
+    if (params && Object.keys(params).length > 0) {
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) {
+                queryParams.append(key, String(value));
+            }
+        });
+        finalUrl += `?${queryParams.toString()}`;
+    }
 
     // Deduplicate GET requests by returning the existing in-flight Promise when present.
     if (method === 'GET') {
-        const key = apiUrl;
+        const key = finalUrl;
         if (inFlightRequests.has(key)) {
             return inFlightRequests.get(key) as Promise<ApiResponse<T>>;
         }
 
-        const promise: Promise<ApiResponse<T>> = fetch(apiUrl, { method, headers, body })
+        const promise: Promise<ApiResponse<T>> = fetch(finalUrl, { method, headers, body })
             .then(async (response) => {
                 if (!response.ok) {
-                    if (response.status === 403) {
+                    if (response.status === 401 || response.status === 403) {
+                        // Try to refresh token
+                        if (!isRefreshing) {
+                            isRefreshing = true;
+                            refreshPromise = refreshAccessToken();
+                        }
+                        const refreshed = await refreshPromise;
+                        isRefreshing = false;
+                        refreshPromise = null;
+
+                        if (refreshed) {
+                            // Retry the request with new token
+                            const newHeaders = {
+                                ...headers,
+                                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                            };
+                            const retryResponse = await fetch(finalUrl, { method, headers: newHeaders, body });
+                            if (retryResponse.ok) {
+                                const json = (await retryResponse.json()) as T;
+                                if (save_name) await saveDataToCache(json, save_name);
+                                return { data: json, offline };
+                            }
+                        }
+                        // If refresh failed or retry failed, logout
                         localStorage.clear();
                         globalThis.location.href = "/auth/login";
+                        throw new Error("Session expired");
                     }
                     throw new Error(response.statusText);
                 }
@@ -81,15 +148,39 @@ export const callApi = async <T = unknown>(
     }
 
     // Non-GET requests: proceed normally (no dedupe)
-    return await fetch(apiUrl, {
+    return await fetch(finalUrl, {
         method: method,
         headers: headers,
         body: body,
     }).then(async (response) => {
         if (!response.ok) {
-            if (response.status === 403) {
+            if (response.status === 401 || response.status === 403) {
+                // Try to refresh token
+                if (!isRefreshing) {
+                    isRefreshing = true;
+                    refreshPromise = refreshAccessToken();
+                }
+                const refreshed = await refreshPromise;
+                isRefreshing = false;
+                refreshPromise = null;
+
+                if (refreshed) {
+                    // Retry the request with new token
+                    const newHeaders = {
+                        ...headers,
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    };
+                    const retryResponse = await fetch(finalUrl, { method, headers: newHeaders, body });
+                    if (retryResponse.ok) {
+                        const json = (await retryResponse.json()) as T;
+                        if (save_name) await saveDataToCache(json, save_name);
+                        return { data: json, offline };
+                    }
+                }
+                // If refresh failed or retry failed, logout
                 localStorage.clear();
                 globalThis.location.href = "/auth/login";
+                throw new Error("Session expired");
             }
             throw new Error(response.statusText);
         }

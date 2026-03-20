@@ -1,9 +1,8 @@
-from typing import Any, Generic, List, Type, TypeVar
+from typing import Any, Generic, List, Type, TypeVar, Optional
 
 from sqlmodel import Session, SQLModel, asc, desc, select
 
-from adapters.ports.crud import CRUD as CRUDBase
-from adapters.ports.crud import T
+from adapters.ports.crud import CRUD as CRUDBase, T
 
 # bound=SQLModel means T must be a SQLModel or a subclass of it
 T = TypeVar("T", bound=SQLModel)
@@ -16,35 +15,27 @@ class CRUD(CRUDBase[T]):
         self.session = session
         self.model = model
 
-    def read(self, **filters):
+    def read(self, **filters) -> List[T]:
         statement = select(self.model)
 
         if "limit" in filters:
-            limit_value = filters.pop("limit")
-            statement = statement.limit(limit_value)
-
+            statement = statement.limit(filters.pop("limit"))
         if "offset" in filters:
-            offset_value = filters.pop("offset")
-            statement = statement.offset(offset_value)
-
+            statement = statement.offset(filters.pop("offset"))
+        
         if "sort_by" in filters:
-            sort_column = filters.pop("sort_by")
-            sort_order = filters.pop("order", "asc").lower()
-
-            if hasattr(self.model, sort_column):
-                column_attr = getattr(self.model, sort_column)
-                if sort_order == "desc":
-                    statement = statement.order_by(desc(column_attr))
-                else:
-                    statement = statement.order_by(asc(column_attr))
+            sort_col = filters.pop("sort_by")
+            order = filters.pop("order", "asc").lower()
+            col_attr = getattr(self.model, sort_col, None)
+            if col_attr:
+                statement = statement.order_by(desc(col_attr) if order == "desc" else asc(col_attr))
 
         for key, value in filters.items():
-            # Dynamically apply filters based on model attributes
             if hasattr(self.model, key):
                 statement = statement.where(getattr(self.model, key) == value)
 
-        results = self.session.exec(statement).all()
-        return list(results)
+        return list(self.session.exec(statement).all())
+
 
     def create(self, element: T) -> T:
         """Implement create logic"""
@@ -53,14 +44,12 @@ class CRUD(CRUDBase[T]):
         self.session.refresh(element)
         return element
 
-    def update(self, item_id: Any, **modifications):
-        """Implement update logic"""
-        # 1. Fetch the existing item
+    def update(self, item_id: Any, **modifications) -> Optional[T]:
+        """Update logic to handle partial updates cleanly"""
         item = self.session.get(self.model, item_id)
         if not item:
             return None
 
-        # 2. Apply modifications
         for key, value in modifications.items():
             if hasattr(item, key):
                 setattr(item, key, value)
@@ -79,3 +68,28 @@ class CRUD(CRUDBase[T]):
         except Exception:
             self.session.rollback()
             return False
+
+    def upsert(self, element: T, **filters) -> T:
+        statement = select(self.model)
+        for key, value in filters.items():
+            statement = statement.where(getattr(self.model, key) == value)
+        
+        existing = self.session.exec(statement).first()
+
+        if existing:
+            update_data = element.model_dump(exclude_unset=True, exclude_none=True)
+            update_data.pop("id", None) 
+
+            for key, value in update_data.items():
+                if hasattr(existing, key):
+                    setattr(existing, key, value)
+            
+            self.session.add(existing)
+            self.session.commit()
+            self.session.refresh(existing)
+            return existing
+        else:
+            self.session.add(element)
+            self.session.commit()
+            self.session.refresh(element)
+            return element

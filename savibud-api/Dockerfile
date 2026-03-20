@@ -6,26 +6,31 @@ ENV PYTHONPATH=/app
 
 WORKDIR /app
 
+# Install uv
+RUN pip install uv
 
-# install build deps then python deps
-COPY savibud-api/requirements-lock.txt ./requirements.txt
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential gcc \
-    && rm -rf /var/lib/apt/lists/* \
-    && python -m pip install --upgrade pip setuptools wheel \
-    && pip install -r requirements.txt \
-    && mkdir -p /app/static/uploads
+# Copy dependency files
+COPY savibud-api/pyproject.toml savibud-api/uv.lock ./
 
-# copy source
+# Install Python dependencies with uv
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Copy source code
 COPY savibud-api/ /app/
+
+# Install the project itself
+RUN uv sync --frozen --no-dev
+
+# Create uploads directory
+RUN mkdir -p /app/static/uploads
 
 # --- API Stage ---
 FROM base AS api
 EXPOSE 14673
 # Run with a single worker by default; increase in production if needed
-CMD ["uvicorn", "drivers.main:app", "--host", "0.0.0.0", "--port", "14673", "--workers", "1"]
+CMD ["uv", "run", "uvicorn", "drivers.main:app", "--host", "0.0.0.0", "--port", "14673", "--workers", "1"]
 
 # --- Scheduler (Worker) Stage ---
 FROM base AS scheduler
 # We don't expose ports here for security
-CMD ["python", "-m", "scheduler.main"]
+CMD ["uv", "run", "python", "-m", "scheduler.main"]

@@ -6,48 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 const manifestForPlugIn: Partial<VitePWAOptions> = {
   registerType: 'autoUpdate',
   includeAssets: ['/assets/favicon.ico', "/img/sav.png", 'robots.txt'],
-  manifest: {
-    name: "Savibud",
-    short_name: "Savibud",
-    description: "Tool to help you manage your expenses, savings, budgets and more.",
-    icons: [{
-      src: '/android-chrome-192x192.png',
-      sizes: '192x192',
-      type: 'image/png',
-      purpose: 'favicon'
-    },
-    {
-      src: '/android-chrome-512x512.png',
-      sizes: '512x512',
-      type: 'image/png',
-      purpose: 'favicon'
-    },
-    {
-      src: 'assets/apple-touch-icon.png',
-      sizes: '180x180',
-      type: 'image/png',
-      purpose: 'apple touch icon',
-    },
-    {
-      purpose: "maskable",
-      sizes: "192x192",
-      src: "assets/maskable_icon_x192.png",
-      type: "image/png"
-    },
-    {
-      purpose: "maskable",
-      sizes: "512x512",
-      src: "assets/maskable_icon_x512.png",
-      type: "image/png"
-    }
-    ],
-    theme_color: '#201b5b',
-    background_color: '#f0e7db',
-    display: "standalone",
-    scope: '/',
-    start_url: "/",
-    orientation: 'portrait'
-  },
+  manifest: false, // Use static manifest instead
   workbox: {
     runtimeCaching: [
       {
@@ -79,7 +38,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:14673',
+        target: 'http://localhost:8004',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''), // Removes /api before sending to backend
       },

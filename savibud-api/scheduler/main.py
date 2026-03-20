@@ -6,20 +6,21 @@ from datetime import datetime
 import httpx
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from pytz import timezone
 
-from adapters.postgres.account_repository import AccountRepository, SnapshotAccountRepository
+from adapters.postgres.account_repository import (
+    AccountRepository,
+    SnapshotAccountRepository,
+)
 from adapters.postgres.powens_repository import PowensRepository
-from adapters.postgres.saving_repository import SavingsAutomationRepository
+from adapters.postgres.saving_repository import SavingsGoalRepository
 from adapters.postgres.transaction_repository import TransactionRepository
+from adapters.powens.client import PowensClient
 from drivers.config import settings
 from drivers.database import SessionLocal
 from drivers.scheduler.task import register_jobs
-from entities.account import Account as DomainAccount, SnapshotAccount
-from entities.budget import Budget
-from entities.category import Category
-from entities.transaction import Transaction as DomainTransaction
-from entities.user import User
 from scheduler.internal_transactions import auto_flag_internal
+from use_cases.sync_powens_user import SyncUserData
 
 # --- LOGGING CONFIGURATION ---
 logging.basicConfig(
@@ -30,12 +31,14 @@ logger = logging.getLogger("savibud.scheduler")
 # --- GLOBAL SCHEDULER OBJECT (NOT STARTED YET) ---
 jobstores = {"default": SQLAlchemyJobStore(url=settings.database_url)}
 # We define it here so other functions can reference it, but we DON'T start it yet.
-scheduler = AsyncIOScheduler(jobstores=jobstores)
+paris_tz = timezone("Europe/Paris")
+
+scheduler = AsyncIOScheduler(jobstores=jobstores, timezone=paris_tz)
 
 
 # --- TASK 1: BANK SYNC ---
 async def sync_all_banks():
-    """Fetches new data from Powens for all connected users"""
+    """Fetches new data from Powens for all connected users using the central use-case."""
     logger.info("🚀 [TASK START] Starting global bank synchronization...")
 
     with SessionLocal() as db:
@@ -44,95 +47,40 @@ async def sync_all_banks():
             account_repo = AccountRepository(db)
             snapshot_account_repo = SnapshotAccountRepository(db)
             transaction_repo = TransactionRepository(db)
+            savings_repo = SavingsGoalRepository(db)
 
             connections = powens_repo.read()
             logger.info(
                 f"📊 [DEBUG] Found {len(connections)} active Powens connections."
             )
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                for conn in connections:
-                    try:
-                        logger.info(f"🔄 Syncing User ID: {conn.user_id}")
-                        headers = {
-                            "Authorization": f"Bearer {conn.powens_access_token}"
-                        }
 
-                        acc_resp = await client.get(
-                            f"https://{settings.powens_domain}/2.0/users/me/accounts",
-                            headers=headers,
-                        )
+            loop = asyncio.get_running_loop()
+            for conn in connections:
+                try:
+                    logger.info(f"🔄 Syncing User ID: {conn.user_id}")
+                    powens_client = PowensClient(
+                        access_token=conn.powens_access_token,
+                        domain=settings.powens_domain,
+                    )
 
-                        if acc_resp.status_code != 200:
-                            continue
-
-                        accounts = acc_resp.json().get("accounts", [])
-                        for acc in accounts:
-                            db_acc_data = {
-                                "powens_account_id": acc["id"],
-                                "user_id": conn.user_id,
-                                "bank_name": acc.get("name", "Unknown"),
-                                "account_type": acc.get("type", "unknown"),
-                                "balance": acc.get("balance", 0),
-                                "raw_data": acc,
-                                "last_sync": datetime.now(),
-                            }
-
-                            existing_acc = account_repo.read(
-                                powens_account_id=str(acc["id"]), user_id=conn.user_id
-                            )
-                            if existing_acc:
-                                db_account = account_repo.update(
-                                    existing_acc[0].id, **db_acc_data
-                                )
-                            else:
-                                db_account = account_repo.create(
-                                    DomainAccount(**db_acc_data)
-                                )
-                            db_snap_acc_data = {
-                                "account_id": db_account.id,
-                                "balance": acc.get("balance", 0),
-                                "snapshot_date": datetime.now(),
-                            }
-                            snapshot_account_repo.create(
-                                SnapshotAccount(**db_snap_acc_data)
-                            )
-
-                            if not db_account:
-                                logger.warning(
-                                    f"⚠️ Failed to create or update account for Powens ID: {acc['id']}"
-                                )
-                                continue
-
-                            tx_resp = await client.get(
-                                f"https://{settings.powens_domain}/2.0/users/me/accounts/{acc['id']}/transactions",
-                                params={"limit": 1000, "offset": 0},
-                                headers=headers,
-                            )
-
-                            if tx_resp.status_code == 200:
-                                for tx in tx_resp.json().get("transactions", []):
-                                    if not transaction_repo.read(
-                                        powens_transaction_id=str(tx["id"])
-                                    ):
-                                        transaction_repo.create(
-                                            DomainTransaction(
-                                                powens_transaction_id=tx["id"],
-                                                user_id=conn.user_id,
-                                                account_id=db_account.id,
-                                                amount=tx.get("value", 0),
-                                                label=tx.get("original_wording", ""),
-                                                date=tx.get("date"),
-                                                raw_data=tx,
-                                            )
-                                        )
-
-                        db.commit()
-                        auto_flag_internal(db, conn.user_id)
-
-                    except Exception as e:
-                        db.rollback()
-                        logger.error(f"❌ Error syncing user {conn.user_id}: {str(e)}")
+                    sync_user = SyncUserData(
+                        powens_client=powens_client,
+                        repo=savings_repo,
+                        powens_repo=powens_repo,
+                        transaction_repo=transaction_repo,
+                        account_repo=account_repo,
+                        snapshot_account_repo=snapshot_account_repo,
+                    )
+                    # Run synchronous use-case in threadpool to avoid blocking the event loop
+                    await loop.run_in_executor(
+                        None, sync_user.accounts_sync, conn.user_id
+                    )
+                    db.commit()
+                    auto_flag_internal(db, conn.user_id)
+                except Exception as e:
+                    db.rollback()
+                    logger.error(f"❌ Error syncing user {conn.user_id}: {str(e)}")
 
             logger.info("🏁 [TASK END] Global bank sync completed.")
         except Exception as e:
@@ -166,9 +114,9 @@ async def main():
         replace_existing=True,
         next_run_time=datetime.now(),  # Runs immediately for test
         # Allow the job to run even if it's up to 24 hours late
-        misfire_grace_time=86400, 
+        misfire_grace_time=86400,
         # coalesce=True prevents it from running 10 times if it missed 10 days
-        coalesce=True
+        coalesce=True,
     )
 
     register_jobs(scheduler)

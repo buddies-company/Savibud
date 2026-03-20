@@ -10,6 +10,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: 🔑 Setup Secrets
+        run: |
+          # Create the directory expected by docker-compose secrets
+          mkdir -p savibud-api/.secrets
+          
+          # Write secrets from GitHub to local files
+          echo "${{ secrets.DB_PASSWORD }}" > savibud-api/.secrets/db_password
+          echo "${{ secrets.POWENS_CLIENT_SECRET }}" > savibud-api/.secrets/powens_client_secret
+          echo "${{ secrets.SECRET_KEY }}" > savibud-api/.secrets/secret_key
+
+          # Secure the files so only the runner user can read them
+          chmod 600 savibud-api/.secrets/*
+
       - name: Deploy
         run: |          
           echo "${{ secrets.FRONT_ENV_FILE }}" > savibud-front/.env

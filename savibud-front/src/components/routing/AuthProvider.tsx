@@ -58,9 +58,10 @@ const AuthProvider = () => {
         formData.append('username', data.username);
         formData.append('password', data.password);
         try {
-            const res = await callApi<{ access_token: string }>("/token", "POST", undefined, formData);
+            const res = await callApi<{ access_token: string; refresh_token: string }>("/token", "POST", undefined, formData);
             if (res.data.access_token) {
                 localStorage.setItem("token", res.data.access_token);
+                localStorage.setItem("refresh_token", res.data.refresh_token);
                 let userId: string | undefined = undefined;
                 try {
                     const parts = res.data.access_token.split('.');
@@ -106,12 +107,30 @@ const AuthProvider = () => {
         }
     }, [loginAction, error]);
 
+    const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (!refreshToken) {
+            return false;
+        }
+
+        try {
+            const res = await callApi<{ access_token: string }>("/token/refresh", "POST", undefined, { refresh_token: refreshToken });
+            if (res.data.access_token) {
+                localStorage.setItem("token", res.data.access_token);
+                return true;
+            }
+        } catch (err) {
+            console.debug('Failed to refresh token', err);
+        }
+        return false;
+    }, []);
+
     const logOut = useCallback(() => {
         setUser(undefined);
         localStorage.clear();
         navigate("/auth/login");
     }, [navigate]);
-    const value = useMemo(() => ({ user, loginAction, registerAction, logOut }), [user, loginAction, registerAction, logOut]);
+    const value = useMemo(() => ({ user, loginAction, registerAction, logOut, refreshAccessToken }), [user, loginAction, registerAction, logOut, refreshAccessToken]);
 
     return <AuthContext.Provider value={value}>
         <Outlet />

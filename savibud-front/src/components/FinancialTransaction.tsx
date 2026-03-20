@@ -12,16 +12,14 @@ const DynamicHeroIcon = ({ iconName, className }: { iconName: string; className?
 
 export const FinancialTransaction = ({ 
   tx, 
-  onSelect,
-  onRefresh // Callback to tell parent to reload data after an update
+  onSelect
 }: { 
   tx: Transaction; 
   onSelect: (tx: Transaction) => void;
-  onRefresh?: () => void;
 }) => {
   if (!tx) return null;
 
-  const { label, amount, date, category } = tx;
+  const { label, amount, date, category, saving_goal } = tx;
   const isPositive = Number(amount) > 0;
 
   /**
@@ -29,13 +27,15 @@ export const FinancialTransaction = ({
    * If category exists, use its color/icon.
    * Else, use "Uncategorized" defaults.
    */
-  const categoryColor = category?.color || '#9ca3af'; // Gray-400 fallback
-  const categoryIcon = category?.icon || 'QuestionMarkCircleIcon';
+  const categoryColor = category?.color || saving_goal?.color || '#9ca3af'; // Gray-400 fallback
+  const categoryIcon = category?.icon || saving_goal?.icon || (tx.is_internal ?'DocumentTextIcon'  : 'QuestionMarkCircleIcon');
 
   return (
     <button
       onClick={() => onSelect(tx)}
-      className="w-full flex items-center cursor-pointer justify-between p-3 hover:bg-surface-base/80 dark:hover:bg-surface-base-dark/20 rounded-2xl transition-all text-left group border border-transparent hover:border-border dark:hover:border-border-dark"
+      className={`w-full flex items-center cursor-pointer justify-between p-3 hover:bg-surface-base/80 dark:hover:bg-surface-base-dark/20 rounded-2xl transition-all text-left group border border-transparent hover:border-border dark:hover:border-border-dark ${
+        tx.is_internal ? 'opacity-50' : ''
+      }`}
     >
       <div className="flex items-center min-w-0">
         {/* Category Icon Box */}

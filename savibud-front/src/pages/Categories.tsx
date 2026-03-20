@@ -3,7 +3,7 @@ import { Button, Modal } from '@soilhat/react-components';
 import { 
   FolderIcon, TagIcon } from '@heroicons/react/24/outline';
 
-const CategoryForm = ({ categories, onSubmit, initialData }: any) => {
+const CategoryForm = ({ categories, initialData }: any) => {
   const [formData, setFormData] = useState(initialData || {
     name: '',
     parent_id: '',
@@ -88,13 +88,12 @@ const CategoryForm = ({ categories, onSubmit, initialData }: any) => {
   );
 };
 
-const CategoryManagement = ({ categories, isOpen, onClose }: any) => {
+export const CategoryManagement = ({ categories, isOpen, onClose }: any) => {
   return (
     <Modal open={isOpen} onClose={onClose}>
-      {/* Header logic (handled inside the Modal body) */}
       <div className="mb-6">
         <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Manage Category</h2>
-        <p className="text-sm text-text-secondary">Define how transactions are grouped in your budget.</p>
+        <p className="text-sm text-text-secondary">Define how transactions are grouped.</p>
       </div>
 
       <CategoryForm categories={categories} />

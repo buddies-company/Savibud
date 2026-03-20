@@ -1,4 +1,7 @@
-from adapters.ports.account_repository import AccountRepository as AccountRepositoryBase, SnapshotAccountRepository as SnapshotAccountRepositoryBase
+from adapters.ports.account_repository import AccountRepository as AccountRepositoryBase
+from adapters.ports.account_repository import (
+    SnapshotAccountRepository as SnapshotAccountRepositoryBase,
+)
 from adapters.postgres.crud import CRUD
 from entities.account import Account, SnapshotAccount
 

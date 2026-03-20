@@ -7,9 +7,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from entities.category import CategoryRead
+from entities.saving import SavingsGoalRead
 
 
-class Transaction(SQLModel, table=True):    
+class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
     id: Optional[int] = Field(default=None, primary_key=True)
     account_id: Optional[UUID] = Field(default=None, foreign_key="accounts.id")
@@ -28,7 +29,9 @@ class Transaction(SQLModel, table=True):
     )
     is_internal: bool = Field(default=False)
     internal_link_id: Optional[int] = Field(default=None, foreign_key="transactions.id")
-    
+
+    category: Optional["Category"] = Relationship(back_populates="transactions")
+    saving_goal: Optional["SavingsGoal"] = Relationship(back_populates="transactions")
 
 class TransactionReadWithCategory(SQLModel):
     id: Optional[int]
@@ -41,3 +44,4 @@ class TransactionReadWithCategory(SQLModel):
     savings_goal_id: Optional["UUID"]
     is_internal: bool
     category: Optional[CategoryRead] = None
+    saving_goal: Optional[SavingsGoalRead] = None

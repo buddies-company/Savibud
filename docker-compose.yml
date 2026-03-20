@@ -1,3 +1,13 @@
+x-common-variables: &common-env
+  DB_HOST: db
+  DB_USER: savibud_user
+  DB_NAME: savibud
+  POWENS_CLIENT_ID: 89499712
+  ALGORITHM: HS256
+  ADAPTER: postgres
+  POWENS_REDIRECT_URI: "http://192.168.0.3:5175/powens/callback"
+  POWENS_DOMAIN: savibud-sandbox.biapi.pro
+
 services:
   db:
     image: postgres:15-alpine
@@ -24,21 +34,16 @@ services:
       dockerfile: savibud-api/Dockerfile
       target: api
     restart: unless-stopped
-    command: sh -c "alembic upgrade head && python savibud-api/main.py"
+    command: sh -c "alembic upgrade heads && uvicorn drivers.main:app --host 0.0.0.0 --port 14673 --workers 1"
+    secrets:
+      - db_password
+      - powens_client_secret
+      - secret_key
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_USER: savibud_user
-      DB_NAME: savibud
-      POWENS_CLIENT_ID: 89499712
-      ALGORITHM: HS256
-      ADAPTER: postgres
-      POWENS_REDIRECT_URI: "http://localhost:4000/powens/callback"
-      POWENS_DOMAIN: savibud-sandbox.biapi.pro
+    environment: *common-env
     volumes:
-      - ./savibud-api:/app
       - uploads_data:/app/static/uploads
 
   front:
@@ -57,11 +62,11 @@ services:
       dockerfile: savibud-api/Dockerfile
       target: scheduler
     command: python -m scheduler.main
-    env_file: savibud-api/.env
-    environment:
-      DB_HOST: db
-      DB_USER: savibud_user
-      DB_NAME: savibud
+    environment: *common-env
+    secrets:
+      - db_password
+      - powens_client_secret
+      - secret_key
     depends_on: [db]
     # Ensure only 1 instance runs
     deploy:
@@ -75,8 +80,8 @@ volumes:
 
 secrets:
   db_password:
-    file: savibud-api/.secrets/db_password.txt
+    file: savibud-api/.secrets/db_password
   powens_client_secret:
-    file: savibud-api/.secrets/powens_client_secret.txt
+    file: savibud-api/.secrets/powens_client_secret
   secret_key:
-    file: savibud-api/.secrets/secret_key.txt
+    file: savibud-api/.secrets/secret_key

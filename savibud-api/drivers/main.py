@@ -2,7 +2,17 @@ from fastapi import Depends, FastAPI
 
 from drivers.database import init_db
 from drivers.dependencies import get_token_header
-from drivers.routers import auth, dashboard, powens, transactions, users, categories, budgets
+from drivers.routers import (
+    auth,
+    accounts,
+    categories,
+    dashboard,
+    powens,
+    rules,
+    savings,
+    transactions,
+    users,
+)
 
 app = FastAPI(title="Savibud API")
 
@@ -19,14 +29,17 @@ app.include_router(
     transactions.router, dependencies=[Depends(get_token_header)], tags=["transactions"]
 )
 app.include_router(
-    transactions.acc_router, dependencies=[Depends(get_token_header)], tags=["accounts"]
+    accounts.router, dependencies=[Depends(get_token_header)], tags=["accounts"]
 )
 app.include_router(
     categories.router, dependencies=[Depends(get_token_header)], tags=["categories"]
 )
 app.include_router(
-    budgets.router, dependencies=[Depends(get_token_header)], tags=["budgets"]
+    dashboard.router, dependencies=[Depends(get_token_header)], tags=["dashboard"]
 )
 app.include_router(
-    dashboard.router, dependencies=[Depends(get_token_header)], tags=["dashboard"]
+    savings.router, dependencies=[Depends(get_token_header)], tags=["savings"]
+)
+app.include_router(
+    rules.router, dependencies=[Depends(get_token_header)], tags=["rules"]
 )

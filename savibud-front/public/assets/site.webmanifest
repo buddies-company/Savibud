@@ -1,21 +1,44 @@
 {
-  "name": "Savibud",
+  "name": "Savibud - Personal Finance Manager",
   "short_name": "Savibud",
+  "description": "Track expenses, manage budgets, and achieve your savings goals",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity"],
+  "lang": "en-US",
   "icons": [
     {
-      "src": "/assets/icon_x300.png/web-app-manifest-192x192.png",
+      "src": "/assets/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/maskable_icon_x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/assets/icon_x300.png/web-app-manifest-512x512.png",
+      "src": "/assets/maskable_icon_x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ],
-  "theme_color": "#2E4A62",
-  "background_color": "#2E4A62",
-  "display": "standalone"
+  ]
 }

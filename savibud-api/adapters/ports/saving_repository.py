@@ -1,18 +1,26 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from decimal import Decimal
 
 from adapters.ports.crud import CRUD
-from entities.saving import SavingsAutomation, SavingsGoal
+from entities.saving import SavingsGoal
 
 
-class SavingsAutomationRepository(CRUD[SavingsAutomation], ABC):
+class SavingsGoalRepository(CRUD[SavingsGoal], ABC):
+    """Savings Goal Repository (includes automation functionality)"""
+
+    @abstractmethod
+    def sum_target_amount(self, user_id) -> Decimal:
+        """sum of target goals amount"""
+        pass
+
     @abstractmethod
     def upsert_account(self, user_id, account_data):
         """Insert or update a savings account for the user."""
         pass
 
     @abstractmethod
-    def get_due_automations(self, as_of_date) -> list[SavingsAutomation]:
+    def get_due_automations(self, as_of_date: date) -> list[SavingsGoal]:
         """Retrieve all active automations due on or before the given date."""
         pass
 
@@ -22,14 +30,7 @@ class SavingsAutomationRepository(CRUD[SavingsAutomation], ABC):
         pass
 
     @abstractmethod
-    def update_automation_date(self, automation_id, new_date):
-        """Update the next run date of the specified automation."""
+    def update_automation_date(self, goal_id, new_date: date):
+        """Update the next run date of the specified goal's automation."""
         pass
 
-
-class SavingsGoalRepository(CRUD[SavingsGoal], ABC):
-    """Saving Goal Repo"""
-
-    @abstractmethod
-    def sum_target_amount(self, user_id)->Decimal:
-        """sum of target goals amount"""

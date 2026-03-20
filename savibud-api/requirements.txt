@@ -1,8 +1,7 @@
 fastapi[standard]
 pyjwt
 passlib[bcrypt]
-black
-isort
+ruff
 pylint
 pytest
 pytest-cov
@@ -11,6 +10,6 @@ pydantic-settings
 sqlmodel
 apscheduler
 requests
-psycopg2
+psycopg2-binary
 alembic
 python-dateutil

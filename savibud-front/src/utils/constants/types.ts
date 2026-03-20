@@ -8,11 +8,60 @@ export type LoginData = {
   password: string;
 };
 
-export type Account = {
+export type FilterParams = {
+  q?: string;
+  category_id?: string;
+  account_id?: string;
+  savings_goal_id?: string;
+  date_from?: string; // ISO format: YYYY-MM-DD
+  date_to?: string;   // ISO format: YYYY-MM-DD
+  uncategorized_only?: boolean;
+  page?: number;
+  limit?: number;
+};
+
+// Shared properties
+interface BaseAccount {
   id: string;
+  name: string;
+  currency: string;
+  is_active: boolean;
+  icon?: string;
+  color: string;
+}
+
+// Specifically for Powens accounts
+export interface BankAccount extends BaseAccount {
+  type: 'bank'; // Discriminator
   bank_name: string;
   balance: number;
-  currency: string;
+  account_type: string;
+  last_sync: string | null;
+}
+
+// Specifically for Manual accounts (Savings or Loans)
+export interface ManualAccount extends BaseAccount {
+  type: 'manual'; // Discriminator
+  account_type: 'loan' | 'savings';
+  current_balance: number;
+  loan_initial_amount?: number;
+  loan_interest_rate?: number;
+  loan_duration_months?: number;
+  loan_start_date?: string;
+  loan_monthly_payment?: number;
+}
+
+// Unified type for the UI
+export type UnifiedAccount = BankAccount | ManualAccount;
+
+export type SnapshotAccount = {
+  id: string;
+  account_id?: string;  // For Powens accounts
+  manual_account_id?: string;  // For manual accounts
+  user_id: string;
+  balance: number;
+  snapshot_date: string;
+  recorded_at: string;
 }
 
 export type Transaction = {
@@ -28,6 +77,7 @@ export type Transaction = {
   powens_transaction_id: string
   savings_goal_id: string
   category: Category
+  saving_goal: SavingsGoal
 }
 
 export type Category = {
@@ -37,15 +87,38 @@ export type Category = {
   color: string;
   icon: string | null;
   is_income: boolean;
+  budget_amount?: number;
+  budget_period?: string;
+  budget_start_date?: Date;
+  budget_end_date?: Date;
+  is_fixed?: boolean;
 }
 
-export type BudgetEntry = {
+export type SavingsGoal = {
   id: string;
-  category_id: string;
-  period: string;
-  start_date: Date,
-  end_date: Date,
-  amount: number;
-  is_fixed: boolean;
-  category: Category;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  icon?: string;
+  color?: string;
+  automation_amount?: number;
+  automation_frequency?: string;
+  automation_next_run_date?: string;
+  automation_is_active?: boolean;
+}
+
+export type Rule = {
+  id: string;
+  category_id?: string;
+  savings_goal_id?: string;
+  name: string;
+  description?: string;
+  keywords?: string[];
+  regex_pattern?: string;
+  min_amount?: number;
+  max_amount?: number;
+  is_active: boolean;
+  priority: number;
+  category?: Category;
+  savings_goal?: SavingsGoal;
 }

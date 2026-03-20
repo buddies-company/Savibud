@@ -13,12 +13,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Import settings and models so SQLModel.metadata is populated
 from drivers.config import settings  # noqa: E402
 from entities.account import Account, SnapshotAccount
-from entities.budget import Budget
 from entities.category import Category
 from entities.powens import PowensConnection
-from entities.saving import SavingsGoal, SavingsAutomation
+from entities.saving import SavingsGoal
 from entities.transaction import Transaction
 from entities.user import User
+from entities.rule import Rule
 
 # this is the Alembic Config object, which provides access to the values within the .ini file
 config = context.config
