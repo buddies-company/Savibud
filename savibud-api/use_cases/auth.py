@@ -23,7 +23,7 @@ class AuthUseCase:
         if not existing_users:
             raise UserNotFoundError(username)
         existing_user: User = existing_users[0]
-        if not pwd_context.verify(password, existing_user.password):
+        if not pwd_context.verify(password[:72], existing_user.password):
             raise InvalidPasswordError(username)
         return existing_user
 
@@ -38,7 +38,7 @@ class RegisterUseCase:
         existing_user = self.user_repository.read(username=user.username)
         if existing_user:
             raise AlreadyExistingUser(f"User {user.username} already exists")
-        user.password = pwd_context.hash(user.password)
+        user.password = pwd_context.hash(user.password[:72])
         self.user_repository.create(user)
         return user
 

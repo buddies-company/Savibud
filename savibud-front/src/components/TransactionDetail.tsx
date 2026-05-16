@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Modal, Input, Select, Button, SearchableCombobox } from '@soilhat/react-components';
 import { Transaction, Category, SavingsGoal } from '../utils/constants/types';
 import * as Icons from '@heroicons/react/24/outline';
-import { CalendarIcon, TagIcon, QuestionMarkCircleIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import {
+  CalendarIcon,
+  TagIcon,
+  QuestionMarkCircleIcon,
+  EyeSlashIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { callApi } from '../services/api';
 
 interface Props {
@@ -20,6 +26,14 @@ const DynamicHeroIcon = ({ iconName, className }: { iconName: string; className?
   return <IconComponent className={className} />;
 };
 
+/** * Overriding the base Transaction type to explicitly allow null 
+ * for fields we want to be able to "clear" in the database.
+ */
+type TransactionFormData = Omit<Transaction, 'category_id' | 'savings_goal_id'> & {
+  category_id?: string | null;
+  savings_goal_id?: string | null;
+};
+
 export const TransactionDetailModal = ({
   tx,
   isOpen,
@@ -28,20 +42,20 @@ export const TransactionDetailModal = ({
   categories,
   savingsGoals
 }: Props) => {
-  const [formData, setFormData] = useState<Partial<Transaction>>({});
+  const [formData, setFormData] = useState<Partial<TransactionFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sync internal state when modal opens or tx changes
   useEffect(() => {
     if (tx) {
-      setFormData(tx);
+      setFormData(tx as TransactionFormData);
     } else {
       setFormData({
         date: new Date(),
         amount: 0,
         label: '',
-        category_id: undefined,
-        savings_goal_id: undefined
+        category_id: null,
+        savings_goal_id: null
       });
     }
   }, [tx, isOpen]);
@@ -61,8 +75,9 @@ export const TransactionDetailModal = ({
     const method = isEdit ? "PUT" : "POST";
 
     try {
-      // For Powens-linked transactions disallow changing amount/date from the UI.
       const payload = { ...formData };
+
+      // For Powens-linked transactions disallow changing amount/date
       if (isEdit && isPowens) {
         delete payload.amount;
         delete payload.date;
@@ -129,6 +144,7 @@ export const TransactionDetailModal = ({
               type="number"
               step="0.01"
               min="0"
+              className="text-center font-black text-2xl"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
               disabled={isPowens}
@@ -151,33 +167,58 @@ export const TransactionDetailModal = ({
             <Input
               label="Date"
               type="date"
-              value={formData.date?.toString().split('T')[0]}
+              value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
               onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
               leftIcon={<CalendarIcon className="h-5 w-5" />}
               disabled={isPowens}
             />
-            <SearchableCombobox
-              label="Category"
-              value={formData.category_id}
-              options={categories.map(c => ({ value: c.id, label: c.name, description: c.is_income ? 'Income' : 'Expense' }))}
-              onChange={(val) => setFormData({ ...formData, category_id: val as string, savings_goal_id: val ? undefined : formData.savings_goal_id })}
-            />
+            <div className="relative group">
+              <SearchableCombobox
+                label="Category / Budget"
+                // Fix ts(2322): Convert null to undefined for the component prop
+                value={formData.category_id ?? undefined}
+                options={categories.map(c => ({ value: c.id, label: c.name, description: c.is_income ? 'Income' : 'Expense' }))}
+                onChange={(val) => setFormData({ ...formData, category_id: val as string || null })}
+              />
+              {formData.category_id && (
+                <button
+                  onClick={() => setFormData({ ...formData, category_id: null })}
+                  className="absolute right-2 top-8 p-1 rounded-md bg-surface-base dark:bg-surface-base-dark hover:text-state-danger transition-colors"
+                  title="Remove Category"
+                >
+                  <XMarkIcon className="h-3 w-3" />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="pt-2 border-t border-border dark:border-border-dark">
+          <div className="pt-2 border-t border-border dark:border-border-dark relative group">
             <Select
               label="Link to Savings Goal"
               placeholder="Optional: Select a goal"
+              // Ensure component always receives a string
               value={formData.savings_goal_id || 'none'}
-              onChange={(val) => setFormData({ ...formData, savings_goal_id: val === 'none' ? undefined : (val as string), category_id: val !== 'none' ? undefined : formData.category_id })}
+              onChange={(val) => setFormData({
+                ...formData,
+                savings_goal_id: val === 'none' ? null : (val as string)
+              })}
               options={[
                 { value: 'none', label: 'No Savings Goal' },
                 ...savingsGoals.map(g => ({ value: g.id, label: g.name }))
               ]}
               className="bg-primary/5 dark:bg-primary-dark/5 p-1 rounded-xl"
             />
+            {formData.savings_goal_id && (
+              <button
+                onClick={() => setFormData({ ...formData, savings_goal_id: null })}
+                className="absolute right-4 top-10 p-1.5 rounded-full bg-surface-card dark:bg-surface-card-dark shadow-sm hover:text-state-danger transition-colors"
+                title="Remove Goal"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            )}
             <p className="mt-2 text-[10px] text-text-secondary dark:text-text-secondary-dark italic px-2">
-              Linking to a goal will move this amount to the "Virtual Account" history.
+              Linking to a goal will affect your progress bars and virtual balance.
             </p>
           </div>
         </div>

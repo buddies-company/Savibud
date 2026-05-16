@@ -85,8 +85,11 @@ def get_adapter_repository(name: str, adapter: str = settings.adapter):
 def get_repository(name: str):
     """Return a dependency factory that provides a repository instance tied to a DB session."""
 
-    def _get_repo(db: Annotated[Session, Depends(get_db)]):
-        RepoClass = get_adapter_repository(name)
+    def _get_repo(db: Annotated[Session, Depends(get_db)], adapter: str = settings.adapter):
+        RepoClass = get_adapter_repository(name, adapter)
+        if adapter == "in_memory":
+            # In-memory repositories don't need a DB session
+            return RepoClass()
         return RepoClass(db)
 
     return _get_repo

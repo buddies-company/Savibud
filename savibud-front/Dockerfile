@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy only package files first so the install layer is cached if lockfile didn't change
 COPY savibud-front/package*.json ./
 COPY savibud-front/.npmrc ./
-RUN npm i --omit=dev
+RUN npm i
 
 COPY savibud-front/ ./
 RUN npm run build

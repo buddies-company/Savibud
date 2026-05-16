@@ -7,8 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: psf/black@stable
+      - uses: astral-sh/ruff-action@v3
         with:
-            options: "--check --verbose"
-            use_pyproject: true
-            src: "./savibud-api"
+          args: "format --check --diff"
+          src: "./savibud-api"

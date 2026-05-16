@@ -28,20 +28,20 @@ interface BaseAccount {
   is_active: boolean;
   icon?: string;
   color: string;
+  last_sync: string | null;
 }
 
 // Specifically for Powens accounts
 export interface BankAccount extends BaseAccount {
-  type: 'bank'; // Discriminator
+  source_type: 'bank'; // Discriminator
   bank_name: string;
   balance: number;
   account_type: string;
-  last_sync: string | null;
 }
 
 // Specifically for Manual accounts (Savings or Loans)
 export interface ManualAccount extends BaseAccount {
-  type: 'manual'; // Discriminator
+  source_type: 'manual'; // Discriminator
   account_type: 'loan' | 'savings';
   current_balance: number;
   loan_initial_amount?: number;

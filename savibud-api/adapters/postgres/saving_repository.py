@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlmodel import Session, and_, func, select
+from sqlmodel import Session, and_, col, func, select
 
 from adapters.ports.saving_repository import (
     SavingsGoalRepository as SavingsGoalRepositoryInterface,
@@ -18,7 +18,7 @@ class SavingsGoalRepository(SavingsGoalRepositoryInterface, CRUD[SavingsGoal]):
     def __init__(self, session: Session):
         super().__init__(session, SavingsGoal)
 
-    def sum_target_amount(self, user_id):
+    def sum_target_amount(self, user_id: UUID):
         budget_stmt = select(func.sum(SavingsGoal.target_amount)).where(
             and_(
                 SavingsGoal.user_id == user_id,
@@ -49,18 +49,24 @@ class SavingsGoalRepository(SavingsGoalRepositoryInterface, CRUD[SavingsGoal]):
             )
             self.session.add(new_goal)
 
-    def get_due_automations(self, as_of_date: date) -> list[SavingsGoal]:
+    def get_due_automations(self, user_id: UUID, as_of_date: date) -> list[SavingsGoal]:
         """Fetch all active automations that need to run today or earlier."""
         statement = select(SavingsGoal).where(
-            SavingsGoal.automation_is_active == True,
-            SavingsGoal.automation_next_run_date <= as_of_date,
+            SavingsGoal.user_id == user_id,
+            col(SavingsGoal.automation_is_active),
+            col(SavingsGoal.automation_next_run_date).is_not(None),
+            col(SavingsGoal.automation_next_run_date) <= as_of_date,
         )
         return list(self.session.exec(statement).all())
 
-    def create_virtual_transaction(self, goal_id: UUID, amount: Decimal, label: str):
+    def create_virtual_transaction(
+        self, user_id: UUID, goal_id: UUID, amount: Decimal, label: str
+    ):
         """Creates the virtual record and updates the goal's current amount."""
         # 1. Add the transaction
-        transaction = Transaction(amount=amount, label=label, savings_goal_id=goal_id)
+        transaction = Transaction(
+            user_id=user_id, amount=amount, label=label, savings_goal_id=goal_id
+        )
         self.session.add(transaction)
 
         # 2. Update the actual goal balance
@@ -79,3 +85,15 @@ class SavingsGoalRepository(SavingsGoalRepositoryInterface, CRUD[SavingsGoal]):
         goal.automation_next_run_date = new_date
         self.session.add(goal)
 
+    def get_all_user_ids_with_automations(self) -> list[UUID]:
+        """Fetches a list of user IDs that have active automations."""
+        statement = (
+            select(SavingsGoal.user_id)
+            .where(
+                col(SavingsGoal.automation_is_active),
+                col(SavingsGoal.automation_next_run_date).is_not(None),
+            )
+            .distinct()
+        )
+        results = self.session.exec(statement).all()
+        return [row[0] for row in results]

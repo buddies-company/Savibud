@@ -1,9 +1,6 @@
 from adapters.ports.account_repository import AccountRepository as AccountRepositoryBase
-from adapters.ports.account_repository import (
-    SnapshotAccountRepository as SnapshotAccountRepositoryBase,
-)
 from adapters.postgres.crud import CRUD
-from entities.account import Account, SnapshotAccount
+from entities.account import Account
 
 
 class AccountRepository(AccountRepositoryBase, CRUD[Account]):
@@ -11,10 +8,3 @@ class AccountRepository(AccountRepositoryBase, CRUD[Account]):
 
     def __init__(self, session):
         super().__init__(session, Account)
-
-
-class SnapshotAccountRepository(SnapshotAccountRepositoryBase, CRUD[SnapshotAccount]):
-    """Snapshot Account Repository using Postgres (SQLModel) data"""
-
-    def __init__(self, session):
-        super().__init__(session, SnapshotAccount)

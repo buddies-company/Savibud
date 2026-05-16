@@ -18,7 +18,7 @@ export const AccountCard = ({ account, onEdit, onDelete, onRefresh }: AccountCar
   const navigate = useNavigate();
 
   const getBalance = (acc: UnifiedAccount): number => {
-    if (acc.type === 'manual') {
+    if (acc.source_type === 'manual') {
       return acc.current_balance;
     }
     return acc.balance;
@@ -43,7 +43,7 @@ export const AccountCard = ({ account, onEdit, onDelete, onRefresh }: AccountCar
   };
 
   const isLoan = account.account_type === "loan";
-  const isManual = account.type === "manual";
+  const isManual = account.source_type === "manual";
 
   return (
     <>

@@ -34,7 +34,7 @@ services:
       dockerfile: savibud-api/Dockerfile
       target: api
     restart: unless-stopped
-    command: sh -c "alembic upgrade heads && uvicorn drivers.main:app --host 0.0.0.0 --port 14673 --workers 1"
+    command: sh -c "uv run alembic upgrade heads && uv run uvicorn drivers.main:app --host 0.0.0.0 --port 14673 --workers 1"
     secrets:
       - db_password
       - powens_client_secret
@@ -42,6 +42,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.settimeout(2); s.connect(('127.0.0.1',14673)); s.close()\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     environment: *common-env
     volumes:
       - uploads_data:/app/static/uploads
@@ -61,13 +66,17 @@ services:
       context: .
       dockerfile: savibud-api/Dockerfile
       target: scheduler
-    command: python -m scheduler.main
+    command: sh -c "uv run alembic upgrade heads && uv run python -m scheduler.main"
     environment: *common-env
     secrets:
       - db_password
       - powens_client_secret
       - secret_key
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     # Ensure only 1 instance runs
     deploy:
       replicas: 1

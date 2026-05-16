@@ -92,9 +92,9 @@ export default function BudgetPlanningPage() {
     categories.forEach(c => {
       const start = c.budget_start_date ? new Date(c.budget_start_date) : null;
       const end = c.budget_end_date ? new Date(c.budget_end_date) : null;
-      
+
       const isActive = (!start || currentMonthDate >= new Date(start.getFullYear(), start.getMonth(), 1)) &&
-                       (!end || currentMonthDate <= new Date(end.getFullYear(), end.getMonth(), 1));
+        (!end || currentMonthDate <= new Date(end.getFullYear(), end.getMonth(), 1));
 
       statusMap.set(c.id, isActive);
       if (isActive && c.budget_amount) {
@@ -122,7 +122,7 @@ export default function BudgetPlanningPage() {
   const globalStats = useMemo(() => {
     let totalSpent = 0;
     let totalBudget = 0;
-    
+
     categories.forEach(c => {
       // We only track expense categories for the burn rate
       if (!c.is_income && categoryStatusMap.get(c.id)) {
@@ -156,7 +156,7 @@ export default function BudgetPlanningPage() {
 
   const filteredIconNames = useMemo(() => {
     const allNames = Object.keys(Icons).filter(name => name.endsWith('Icon'));
-    return iconSearch 
+    return iconSearch
       ? allNames.filter(name => name.toLowerCase().includes(iconSearch.toLowerCase())).slice(0, 28)
       : allNames.slice(0, 28);
   }, [iconSearch]);
@@ -200,14 +200,14 @@ export default function BudgetPlanningPage() {
     const isIncome = item.is_income;
 
     const isOverTarget = remaining < 0;
-    const diffColor = isIncome 
-      ? (isOverTarget ? 'text-state-success dark:text-state-success-dark' : 'text-state-danger dark:text-state-danger-dark') 
+    const diffColor = isIncome
+      ? (isOverTarget ? 'text-state-success dark:text-state-success-dark' : 'text-state-danger dark:text-state-danger-dark')
       : (isOverTarget ? 'text-state-danger dark:text-state-danger-dark' : 'text-state-success dark:text-state-success-dark');
 
     return (
       <div className={`px-4 py-4 border-b border-border/50 dark:border-border-dark/50 hover:bg-surface-base/30 dark:hover:bg-surface-base-dark/30 transition-colors ${!isActive && 'opacity-40 grayscale bg-surface-base/10 dark:bg-surface-base-dark/10'}`}>
         <div className="flex items-start justify-between gap-2" style={{ paddingLeft: `${level * 12}px` }}>
-          
+
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button onClick={toggle} className={`p-1 rounded shrink-0 hover:bg-surface-panel dark:hover:bg-surface-panel-dark ${!hasChildren && 'invisible'}`}>
               {isExpanded ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
@@ -230,7 +230,7 @@ export default function BudgetPlanningPage() {
             <span className={`text-sm font-black font-mono ${diffColor}`}>
               €{remaining.toFixed(2)}
             </span>
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-1 mt-1 hidden sm:flex">
               <Button onClick={() => { setSelectedItem(item); setModalMode('category'); }} variant='ghost'><PencilSquareIcon className="h-4 w-4" /></Button>
               <Button onClick={() => navigate(`/transactions?category_id=${item.id}`)} variant='ghost'><ArrowRightIcon className="h-4 w-4" /></Button>
               <Button onClick={() => { setSelectedItem(item); setModalMode('delete'); }} variant='ghost' color_name='danger'><TrashIcon className="h-4 w-4" /></Button>
@@ -243,11 +243,11 @@ export default function BudgetPlanningPage() {
 
   return (
     <div className="min-h-screen bg-surface-base dark:bg-surface-base-dark text-text-primary dark:text-text-primary-dark">
-      <Heading 
-        title="Budgeting" 
-        variant="page" 
+      <Heading
+        title="Budgeting"
+        variant="page"
         filters={[
-          { key: 'planning', value: 'Overview', active: activeTab === 'planning', props: { onClick: () => setActiveTab('planning') } }, 
+          { key: 'planning', value: 'Overview', active: activeTab === 'planning', props: { onClick: () => setActiveTab('planning') } },
           { key: 'rules', value: 'Rules', active: activeTab === 'rules', props: { onClick: () => setActiveTab('rules') } }
         ]}
       >
@@ -273,11 +273,10 @@ export default function BudgetPlanningPage() {
               </div>
 
               <div className="w-full h-2.5 bg-border/20 dark:bg-border-dark/20 rounded-full overflow-hidden mb-6">
-                <div 
-                  className={`h-full transition-all duration-700 rounded-full ${
-                    globalStats.percentUsed > 100 ? 'bg-state-danger dark:bg-state-danger-dark' : 
-                    globalStats.percentUsed > 85 ? 'bg-state-warning dark:bg-state-warning-dark' : 'bg-primary dark:bg-primary-dark'
-                  }`}
+                <div
+                  className={`h-full transition-all duration-700 rounded-full ${globalStats.percentUsed > 100 ? 'bg-state-danger dark:bg-state-danger-dark' :
+                      globalStats.percentUsed > 85 ? 'bg-state-warning dark:bg-state-warning-dark' : 'bg-primary dark:bg-primary-dark'
+                    }`}
                   style={{ width: `${Math.min(globalStats.percentUsed, 100)}%` }}
                 />
               </div>
@@ -340,92 +339,132 @@ export default function BudgetPlanningPage() {
                 <span className="text-[10px] font-black uppercase text-state-success tracking-tighter">Incomes</span>
                 <span className="text-xs font-mono font-bold text-state-success">Total: €{totals.income.toFixed(2)}</span>
               </div>
-              <CategoryTree items={incomeCategories} renderItem={renderCategoryRow} />
+              <CategoryTree
+                items={incomeCategories}
+                renderItem={renderCategoryRow}
+                rightSwipeActions={[
+                  {
+                    icon: <PencilSquareIcon className="h-5 w-5" />,
+                    label: 'Edit',
+                    color: '#3b82f6',
+                    onClick: (item) => { setSelectedItem(item); setModalMode('category'); }
+                  },
+                  {
+                    icon: <TrashIcon className="h-5 w-5" />,
+                    label: 'Delete',
+                    color: '#ef4444',
+                    onClick: (item) => { setSelectedItem(item); setModalMode('delete'); }
+                  }
+                ]}
+              />
 
               {/* Expenses */}
               <div className="bg-state-danger/5 border-y border-state-danger/10 px-4 py-3 mt-4 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase text-state-danger tracking-tighter">Expenses</span>
                 <span className="text-xs font-mono font-bold text-state-danger">Total: €{totals.expenses.toFixed(2)}</span>
               </div>
-              <CategoryTree items={expenseCategories} renderItem={renderCategoryRow} />
+              <CategoryTree
+                items={expenseCategories}
+                renderItem={renderCategoryRow}
+                rightSwipeActions={[
+                  {
+                    icon: <PencilSquareIcon className="h-5 w-5" />,
+                    label: 'Edit',
+                    color: '#3b82f6',
+                    onClick: (item) => { setSelectedItem(item); setModalMode('category'); }
+                  },
+                  {
+                    icon: <TrashIcon className="h-5 w-5" />,
+                    label: 'Delete',
+                    color: '#ef4444',
+                    onClick: (item) => { setSelectedItem(item); setModalMode('delete'); }
+                  }
+                ]}
+              />
             </Card>
           </>
         )}
       </main>
 
       {/* MODAL: CATEGORY EDIT/CREATE */}
-      <Modal open={modalMode === 'category'} onClose={handleClose}>
-        <div className="sticky top-0 bg-surface-panel dark:bg-surface-panel-dark z-20 -mx-6 -mt-6 px-6 py-4 border-b border-border flex justify-between items-center sm:static sm:bg-transparent sm:p-0 sm:border-none">
-           <Heading title={selectedItem?.id ? "Edit Category" : "New Category"} />
-           <Button variant="ghost" className="sm:hidden" onClick={handleClose}>Done</Button>
-        </div>
-        
-        <div className="space-y-6 mt-6 pb-20 sm:pb-0">
-          <Input label="Category Name" value={selectedItem?.name || ''} onChange={(e) => setSelectedItem({ ...selectedItem, name: e.target.value })} leftIcon={<TagIcon className="h-5 w-5" />} />
-          <Select label="Parent Category" value={selectedItem?.parent_id || 'none'} onChange={(val) => setSelectedItem({ ...selectedItem, parent_id: val })} options={[{ value: 'none', label: 'None' }, ...categories.filter(c => c.id !== selectedItem?.id).map(c => ({ value: c.id, label: c.name }))]} />
-          
-          <div className="pt-4 border-t border-border dark:border-border-dark">
-            <label className="text-[10px] uppercase tracking-widest mb-4 block opacity-60">Budget Settings</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Amount (€)" type="number" step="0.01" value={selectedItem?.budget_amount || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_amount: e.target.value })} leftIcon={<BanknotesIcon className="h-5 w-5" />} />
-              <Select label="Frequency" value={selectedItem?.budget_period || 'monthly'} onChange={(val) => setSelectedItem({ ...selectedItem, budget_period: val })} options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <Input type="date" label="Valid From" value={selectedItem?.budget_start_date || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_start_date: e.target.value })} leftIcon={<CalendarDaysIcon className="h-5 w-5" />} />
-              <Input type="date" label="Valid Until" value={selectedItem?.budget_end_date || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_end_date: e.target.value })} leftIcon={<CalendarDaysIcon className="h-5 w-5" />} />
-            </div>
+      <Drawer open={modalMode === 'category'} onClose={handleClose} position="bottom">
+        <Drawer.Header>
+          <div className="flex justify-between items-center">
+            <Heading title={selectedItem?.id ? "Edit Category" : "New Category"} />
+            <Button variant="ghost" className="sm:hidden" onClick={handleClose}>Done</Button>
           </div>
+        </Drawer.Header>
 
-          <div className="pt-4 border-t border-border dark:border-border-dark space-y-4">
-            <div className="grid grid-cols-2 gap-4 items-end">
-              <Input label="Color" type="color" className="h-10 p-1" value={selectedItem?.color || '#3b82f6'} onChange={(e) => setSelectedItem({ ...selectedItem, color: e.target.value })} />
-              <div className="flex flex-col gap-2">
-                <span className="text-[10px] uppercase opacity-60">Options</span>
+        <Drawer.Body>
+          <div className="space-y-6">
+            <Input label="Category Name" value={selectedItem?.name || ''} onChange={(e) => setSelectedItem({ ...selectedItem, name: e.target.value })} leftIcon={<TagIcon className="h-5 w-5" />} />
+            <Select label="Parent Category" value={selectedItem?.parent_id || 'none'} onChange={(val) => setSelectedItem({ ...selectedItem, parent_id: val })} options={[{ value: 'none', label: 'None' }, ...categories.filter(c => c.id !== selectedItem?.id).map(c => ({ value: c.id, label: c.name }))]} />
+
+            <div className="pt-4 border-t border-border dark:border-border-dark">
+              <label className="text-[10px] uppercase tracking-widest mb-4 block opacity-60">Budget Settings</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input label="Amount (€)" type="number" step="0.01" value={selectedItem?.budget_amount || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_amount: e.target.value })} leftIcon={<BanknotesIcon className="h-5 w-5" />} />
+                <Select label="Frequency" value={selectedItem?.budget_period || 'monthly'} onChange={(val) => setSelectedItem({ ...selectedItem, budget_period: val })} options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <Input type="date" label="Valid From" value={selectedItem?.budget_start_date || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_start_date: e.target.value })} leftIcon={<CalendarDaysIcon className="h-5 w-5" />} />
+                <Input type="date" label="Valid Until" value={selectedItem?.budget_end_date || ''} onChange={(e) => setSelectedItem({ ...selectedItem, budget_end_date: e.target.value })} leftIcon={<CalendarDaysIcon className="h-5 w-5" />} />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-border dark:border-border-dark space-y-4">
+              <div className="grid grid-cols-2 gap-4 items-end">
+                <Input label="Color" type="color" className="h-10 p-1" value={selectedItem?.color || '#3b82f6'} onChange={(e) => setSelectedItem({ ...selectedItem, color: e.target.value })} />
                 <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedItem?.is_income || false} onChange={(e) => setSelectedItem({ ...selectedItem, is_income: e.target.checked })} /> Income</label>
-                  <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedItem?.is_fixed || false} onChange={(e) => setSelectedItem({ ...selectedItem, is_fixed: e.target.checked })} /> Fixed Bill</label>
+                  <span className="text-[10px] uppercase opacity-60">Options</span>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedItem?.is_income || false} onChange={(e) => setSelectedItem({ ...selectedItem, is_income: e.target.checked })} /> Income</label>
+                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={selectedItem?.is_fixed || false} onChange={(e) => setSelectedItem({ ...selectedItem, is_fixed: e.target.checked })} /> Fixed Bill</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <label className="text-[10px] uppercase tracking-widest mb-2 block opacity-60">Icon</label>
+                <div className="relative mb-2">
+                  <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 text-text-secondary opacity-50 z-10" />
+                  <Input type="text" placeholder="Search icons..." value={iconSearch} className="pl-9" onChange={(e) => setIconSearch(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto p-2 bg-surface-base/10 rounded-xl">
+                  {filteredIconNames.map((name) => (
+                    <button key={name} onClick={() => setSelectedItem({ ...selectedItem, icon: name })} className={`p-3 rounded-xl flex items-center justify-center transition-all ${selectedItem?.icon === name ? 'bg-primary text-white shadow-lg' : 'hover:bg-surface-panel opacity-60'}`}><DynamicHeroIcon iconName={name} className="h-5 w-5" /></button>
+                  ))}
                 </div>
               </div>
             </div>
-            
-            <div className="pt-4">
-              <label className="text-[10px] uppercase tracking-widest mb-2 block opacity-60">Icon</label>
-              <div className="relative mb-2">
-                <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 text-text-secondary opacity-50 z-10" />
-                <Input type="text" placeholder="Search icons..." value={iconSearch} className="pl-9" onChange={(e) => setIconSearch(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto p-2 bg-surface-base/10 rounded-xl">
-                {filteredIconNames.map((name) => (
-                  <button key={name} onClick={() => setSelectedItem({ ...selectedItem, icon: name })} className={`p-3 rounded-xl flex items-center justify-center transition-all ${selectedItem?.icon === name ? 'bg-primary text-white shadow-lg' : 'hover:bg-surface-panel opacity-60'}`}><DynamicHeroIcon iconName={name} className="h-5 w-5" /></button>
-                ))}
-              </div>
-            </div>
           </div>
-        </div>
-        
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface-base border-t border-border dark:bg-surface-base-dark sm:static sm:bg-transparent sm:border-none sm:p-0 sm:mt-8 flex gap-3 z-30">
+        </Drawer.Body>
+
+        <Drawer.Footer>
           <Button className="flex-1 h-12" onClick={handleSaveCategory} isLoading={isLoading}>Save Changes</Button>
           <Button variant="ghost" className="hidden sm:flex flex-1 h-12" onClick={handleClose}>Cancel</Button>
-        </div>
-      </Modal>
+        </Drawer.Footer>
+      </Drawer>
 
       {/* MODAL: DELETE CONFIRMATION */}
-      <Modal open={modalMode === 'delete'} onClose={handleClose}>
-        <div className="flex flex-col items-center text-center py-4">
-          <div className="w-16 h-16 bg-state-danger/10 text-state-danger rounded-full flex items-center justify-center mb-6">
-            <ExclamationTriangleIcon className="h-10 w-10" />
+      <Drawer open={modalMode === 'delete'} onClose={handleClose} position="bottom">
+        <Drawer.Body>
+          <div className="flex flex-col items-center text-center py-4">
+            <div className="w-16 h-16 bg-state-danger/10 text-state-danger rounded-full flex items-center justify-center mb-6">
+              <ExclamationTriangleIcon className="h-10 w-10" />
+            </div>
+            <Heading title="Delete?" />
+            <p className="mt-4 text-sm text-text-secondary px-4 leading-relaxed">
+              Delete <span className="font-bold text-text-primary">"{selectedItem?.name}"</span>?
+              This cannot be undone.
+            </p>
           </div>
-          <Heading title="Delete?" />
-          <p className="mt-4 text-sm text-text-secondary px-4 leading-relaxed">
-            Delete <span className="font-bold text-text-primary">"{selectedItem?.name}"</span>? 
-            This cannot be undone.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 mt-8">
+        </Drawer.Body>
+        <Drawer.Footer>
           <Button className="h-12 bg-state-danger border-none" onClick={handleDeleteCategory} isLoading={isLoading}>Delete</Button>
           <Button variant="ghost" className="h-12" onClick={handleClose}>Cancel</Button>
-        </div>
-      </Modal>
+        </Drawer.Footer>
+      </Drawer>
     </div>
   );
 }

@@ -3,10 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { Heading, Button, Card } from '@soilhat/react-components';
 import {
   PlusIcon, CreditCardIcon, WalletIcon, BuildingLibraryIcon,
-  ArrowRightIcon, PencilSquareIcon, ArrowPathIcon
+  ArrowRightIcon, PencilSquareIcon, ArrowPathIcon, ClockIcon
 } from '@heroicons/react/24/outline';
 import { UnifiedAccount, BankAccount, ManualAccount } from '../utils/constants/types';
 import { callApi } from '../services/api';
+
+// Helper to format the sync date nicely
+const formatRelativeDate = (dateString: string | null) => {
+  if (!dateString) return 'Never';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMins = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMins / 60);
+
+  if (diffInMins < 1) return 'Just now';
+  if (diffInMins < 60) return `${diffInMins}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+};
 
 export default function AccountsPage() {
   const navigate = useNavigate();
@@ -32,7 +47,7 @@ export default function AccountsPage() {
     try {
       const endpoint = accountId ? `/accounts/${accountId}/sync` : "/accounts/sync";
       await callApi(endpoint, "POST");
-      await fetchAccounts(); // Refresh data after sync
+      await fetchAccounts();
     } catch (error) {
       console.error("Sync failed", error);
     } finally {
@@ -51,18 +66,15 @@ export default function AccountsPage() {
     };
 
     accounts.forEach(acc => {
-      // Handle balance mapping: 'balance' for Bank, 'current_balance' for Manual
       const balance = 'balance' in acc ? Number(acc.balance) : Number(acc.current_balance);
       data.totalNetWorth += balance;
 
       if ('bank_name' in acc) {
-        // It's a Bank Account
         const bank = acc.bank_name || 'Other';
         if (!data.banks[bank]) data.banks[bank] = { total: 0, list: [] };
         data.banks[bank].list.push(acc);
         data.banks[bank].total += balance;
       } else {
-        // It's a Manual Account
         if (acc.account_type === 'loan') {
           data.loans.push(acc);
         } else {
@@ -101,8 +113,7 @@ export default function AccountsPage() {
         </div>
       </Heading>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-12">
-        {/* 1. Net Worth Header */}
+      <main className="max-width-7xl mx-auto px-4 py-8 space-y-12">
         <Card className="bg-primary p-8 text-white rounded-[2.5rem]">
           <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Total Net Worth</p>
           <h2 className="text-5xl font-black mt-2">
@@ -111,10 +122,9 @@ export default function AccountsPage() {
         </Card>
 
         {isLoading ? (
-          <p>Loading accounts...</p>
+          <p className="text-center py-10 opacity-50">Loading accounts...</p>
         ) : (
           <>
-            {/* 2. Bank Sections */}
             {Object.entries(categorized.banks).map(([name, group]) => (
               <div key={name} className="space-y-4">
                 <div className="flex justify-between items-end px-4 border-b border-border/50 pb-2">
@@ -129,7 +139,6 @@ export default function AccountsPage() {
               </div>
             ))}
 
-            {/* 3. Manual Assets */}
             {categorized.manual.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-sm font-black text-text-secondary uppercase tracking-[0.3em] px-4">Manual Assets</h3>
@@ -141,7 +150,6 @@ export default function AccountsPage() {
               </div>
             )}
 
-            {/* 4. Liabilities (Loans) */}
             {categorized.loans.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-sm font-black text-state-danger uppercase tracking-[0.3em] px-4">Liabilities</h3>
@@ -159,29 +167,35 @@ export default function AccountsPage() {
   );
 }
 
-// --- Dynamic Card Component ---
-function AccountCard({ account, type, isSyncing, handleSync}: { account: UnifiedAccount, type: 'bank' | 'manual' | 'loan', isSyncing?: string | null, handleSync?: (id: string) => void }) {
+function AccountCard({ account, type, isSyncing, handleSync }: { account: UnifiedAccount, type: 'bank' | 'manual' | 'loan', isSyncing?: string | null, handleSync?: (id: string) => void }) {
   const navigate = useNavigate();
-  // Safe balance access based on type
   const balance = 'balance' in account ? account.balance : account.current_balance;
 
   return (
-    <Card className="rounded-[2rem] p-6 hover:shadow-lg transition-all group">
+    <Card className="rounded-[2rem] p-6 hover:shadow-lg transition-all group relative overflow-hidden">
       <div className="flex justify-between mb-4">
         <div className={`p-3 rounded-xl ${type === 'loan' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
           {type === 'bank' ? <BuildingLibraryIcon className="h-6 w-6" /> :
             type === 'loan' ? <CreditCardIcon className="h-6 w-6" /> : <WalletIcon className="h-6 w-6" />}
         </div>
-        {type === 'bank' && <button
-          onClick={(e) => { e.stopPropagation(); handleSync && handleSync(account.id); }}
-          disabled={isSyncing !== null}
-          className="p-2 hover:bg-surface-base dark:hover:bg-surface-base-dark rounded-xl transition-colors text-text-secondary"
-        >
-          <ArrowPathIcon className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin text-primary' : ''}`} />
-        </button>}
-        <button onClick={() => navigate(`/accounts/${type}/edit/${account.id}`)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <PencilSquareIcon className="h-5 w-5 text-text-secondary" />
-        </button>
+
+        <div className="flex gap-1">
+          {type === 'bank' && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleSync && handleSync(account.id); }}
+              disabled={isSyncing !== null}
+              className="p-2 hover:bg-surface-base dark:hover:bg-surface-base-dark rounded-xl transition-colors text-text-secondary"
+            >
+              <ArrowPathIcon className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin text-primary' : ''}`} />
+            </button>
+          )}
+          <button
+            onClick={() => navigate(`/accounts/${type}/edit/${account.id}`)}
+            className="p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-surface-base dark:hover:bg-surface-base-dark rounded-xl"
+          >
+            <PencilSquareIcon className="h-5 w-5 text-text-secondary" />
+          </button>
+        </div>
       </div>
 
       <p className="text-[10px] font-black text-text-secondary uppercase truncate">{account.name}</p>
@@ -189,9 +203,17 @@ function AccountCard({ account, type, isSyncing, handleSync}: { account: Unified
         {Number(balance).toLocaleString('fr-FR')}€
       </p>
 
+      <div className="flex items-center gap-1.5 mt-3 text-[10px] font-bold text-text-secondary/60">
+        <ClockIcon className="h-3 w-3" />
+        <span>
+          {account.source_type === 'bank' ? 'Synced ' : 'Updated '}
+          {formatRelativeDate(account.last_sync)}
+        </span>
+      </div>
+
       <Button
         variant="ghost"
-        className="w-full justify-between mt-4 px-0 hover:bg-transparent group-hover:text-primary"
+        className="w-full justify-between mt-4 px-0 hover:bg-transparent group-hover:text-primary border-t border-border/30 pt-4 rounded-none"
         rightIcon={<ArrowRightIcon className="h-4 w-4" />}
         onClick={() => navigate(`/transactions?account_id=${account.id}`)}
       >

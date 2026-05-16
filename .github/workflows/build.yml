@@ -1,4 +1,4 @@
-name: Python package
+name: Build and SonarQube Analysis
 
 on:
     push:
@@ -34,7 +34,7 @@ jobs:
       - name: Run tests and generate coverage
         working-directory: ./savibud-api
         run: |
-          uv run pytest --cov=. --cov-report=xml --maxfail=1 --exitfirst
+          ADAPTER=in_memory uv run pytest --cov=. --cov-report=xml --maxfail=1 --exitfirst
       - name: Cache coverage report
         uses: actions/cache@v3
         with:

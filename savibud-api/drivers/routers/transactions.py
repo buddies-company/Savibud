@@ -6,7 +6,11 @@ from adapters.ports.saving_repository import SavingsGoalRepository
 from adapters.ports.transaction_repository import TransactionRepository
 from drivers.dependencies import get_repository
 from drivers.routers.users import connected_user
-from entities.transaction import TransactionReadWithCategory, Transaction
+from entities.transaction import (
+    TransactionReadWithCategory,
+    Transaction,
+    TransactionUpdate,
+)
 from entities.user import User
 from use_cases.transactions import TransactionInteractor
 from use_cases.recalculate_savings import RecalculateSavingsGoals
@@ -24,7 +28,9 @@ def transactions_list(
     savings_goal_id: Optional[UUID] = Query(None),
     date_from: Optional[str] = Query(None, description="ISO format date (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="ISO format date (YYYY-MM-DD)"),
-    uncategorized_only: bool = Query(False, description="Show only uncategorized transactions"),
+    uncategorized_only: bool = Query(
+        False, description="Show only uncategorized transactions"
+    ),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
 ):
@@ -39,8 +45,9 @@ def transactions_list(
         date_to=date_to,
         uncategorized_only=uncategorized_only,
         limit=limit,
-        offset=(page - 1) * limit
+        offset=(page - 1) * limit,
     )
+
 
 @router.post("/{transaction_id}/toggle_internal")
 def toggle_internal(
@@ -50,10 +57,10 @@ def toggle_internal(
 ):
     interactor = TransactionInteractor(transaction_repo)
     updated_tx = interactor.toggle_internal_status(transaction_id, user.id)
-    
+
     if not updated_tx:
         return {"error": "Transaction not found or access denied"}
-        
+
     return updated_tx
 
 
@@ -70,42 +77,44 @@ def create_transaction(
         created = interactor.create_transaction(user.id, item)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     # Recalculate savings goals if transaction is linked to one
     if created.savings_goal_id:
         recalculator = RecalculateSavingsGoals(savings_repo, transaction_repo)
         recalculator(user.id)
-    
+
     return created
 
 
 @router.put("/{transaction_id}")
 def update_transaction(
     transaction_id: int,
-    item: Transaction,
+    item: TransactionUpdate,
     user: User = Depends(connected_user),
     transaction_repo: TransactionRepository = Depends(get_repository("transaction")),
     savings_repo: SavingsGoalRepository = Depends(get_repository("saving_goals")),
 ):
     interactor = TransactionInteractor(transaction_repo)
     modifications = item.model_dump(exclude_unset=True)
-    
+
     # Get the current transaction to check if savings_goal_id changed
     current_tx = transaction_repo.get_by_id_and_user(transaction_id, user.id)
     old_savings_goal_id = current_tx.savings_goal_id if current_tx else None
-    
+
     try:
-        updated = interactor.update_transaction(transaction_id, user.id, **modifications)
+        updated = interactor.update_transaction(
+            transaction_id, user.id, **modifications
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-        
+
     if not updated:
         return {"error": "Transaction not found or access denied"}
-    
+
     # Recalculate savings goals if savings_goal_id changed
     new_savings_goal_id = updated.savings_goal_id
     if old_savings_goal_id != new_savings_goal_id:
         recalculator = RecalculateSavingsGoals(savings_repo, transaction_repo)
         recalculator(user.id)
-    
+
     return updated

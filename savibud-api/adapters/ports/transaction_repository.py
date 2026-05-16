@@ -11,8 +11,8 @@ class TransactionRepository(CRUD[Transaction], ABC):
 
     @abstractmethod
     def get_user_transactions(
-        self, 
-        user_id: UUID, 
+        self,
+        user_id: UUID,
         q: Optional[str] = None,
         account_id: Optional[UUID] = None,
         category_id: Optional[UUID] = None,
@@ -21,10 +21,22 @@ class TransactionRepository(CRUD[Transaction], ABC):
         date_to: Optional[str] = None,
         uncategorized_only: bool = False,
         limit: int = 20,
-        offset: int = 0
-    )-> list[Transaction]:
+        offset: int = 0,
+    ) -> list[Transaction]:
         """Fetch transactions for a user with optional filters and pagination"""
 
     @abstractmethod
     def get_by_id_and_user(self, tx_id: int, user_id: UUID) -> Optional[Transaction]:
         """Fetch a transaction by ID ensuring it belongs to the specified user"""
+
+    @abstractmethod
+    def get_unlinked_candidates(
+        self, user_id: UUID, days: int = 7
+    ) -> list[Transaction]:
+        """Fetch transactions that are not yet flagged as internal transfers and are within a certain date range"""
+
+    @abstractmethod
+    def find_mirror_transaction(
+        self, user_id: UUID, source_tx: Transaction, date_window: int = 3
+    ) -> Optional[Transaction]:
+        """Find a potential mirror transaction for a given source transaction based on amount, date proximity, and other criteria"""

@@ -33,6 +33,7 @@ class Transaction(SQLModel, table=True):
     category: Optional["Category"] = Relationship(back_populates="transactions")
     saving_goal: Optional["SavingsGoal"] = Relationship(back_populates="transactions")
 
+
 class TransactionReadWithCategory(SQLModel):
     id: Optional[int]
     account_id: Optional[UUID]
@@ -45,3 +46,16 @@ class TransactionReadWithCategory(SQLModel):
     is_internal: bool
     category: Optional[CategoryRead] = None
     saving_goal: Optional[SavingsGoalRead] = None
+
+
+class TransactionUpdate(SQLModel):
+    """Request model for updating a transaction (excludes relationships)."""
+
+    account_id: Optional[UUID] = None
+    category_id: Optional[UUID] = None
+    amount: Optional[Decimal] = None
+    label: Optional[str] = None
+    date: Optional[date_type] = None
+    is_deleted: Optional[bool] = None
+    savings_goal_id: Optional[UUID] = None
+    is_internal: Optional[bool] = None

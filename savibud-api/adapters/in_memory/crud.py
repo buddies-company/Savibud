@@ -26,5 +26,8 @@ class CRUD(CRUDBase):
         for key, value in modifications.items():
             setattr(item, key, value)
 
+    def upsert(self, element, **filters):
+        return super().upsert(element, **filters)
+
     def delete(self, item):
         self.data.remove(item)

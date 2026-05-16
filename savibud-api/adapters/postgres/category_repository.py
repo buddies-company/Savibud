@@ -79,7 +79,7 @@ class CategoryRepository(CategoryRepositoryBase, CRUD):
         )
 
         if not include_incomes:
-            statement = statement.where(Category.is_income == False)
+            statement = statement.where(Category.is_income.is_(False))
 
         statement = statement.where(
             Category.user_id == user_id,

@@ -130,5 +130,5 @@ const formatHeaderDate = (dateStr: string) => {
   yesterday.setDate(today.getDate() - 1);
   if (date.toDateString() === today.toDateString()) return "Today";
   if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 };
